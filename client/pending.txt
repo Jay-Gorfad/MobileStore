@@ -1,0 +1,11 @@
+checkout - validation on change
+fix contact form
+make order details responsive
+product details
+
+
+
+-------------- New ------------------
+
+checkout page - Billing Details Validation not working 
+toast.success color change to Blue
