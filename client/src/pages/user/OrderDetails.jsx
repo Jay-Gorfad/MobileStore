@@ -5,36 +5,36 @@ const OrderDetails = ({ order = {
     orderId: "123456", 
     status: "Processing",
     placedOn: "01/03/2025",
-    total: 1500,
+    total: 139000,
     shippingCharge: 50,
-    firstName: "John",
-    lastName: "Doe", 
-    mobileNo: "9876543210",
-    email: "johndoe@example.com",
+    firstName: "Jay",
+    lastName: "Gorfad", 
+    mobileNo: "7600242424",
+    email: "jaygorfad00@gmail.com",
     paymentMode: "Credit Card",
     estimatedDelivery: "03/03/2025"
 }, billingAddress={
-    fullName: "John Doe",
-    address: "123 Baker Street",
-    city: "New York", 
-    state: "NY",
-    pincode: "10001",
-    phone: "9876543210"
+    fullName: "Bhatt Prince",
+    address: "Kothariya Road",
+    city: "Rajkot", 
+    state: "Gujarat",
+    pincode: "360002",
+    phone: "9865320147"
 }, products=[
     {
         productId: 1,
-        productName: "Apple 1 KG",
-        productImage: "img/items/products/66ee9001ceeaeapple.webp",
+        productName: "IPhone 15 Pro Max",
+        productImage: "img/items/products/67409349bfcac_71yzJoE7WlL._SX679_.jpg",
         quantity: 2,
-        price: 500,
+        price: 139000,
         status: "Shipped"
     },
     {
         productId: 2,
-        productName: "Cookie Cake",
-        productImage: "img/items/products/cookiecake.webp",
+        productName: "Galaxy S23 Ultra",
+        productImage: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
         quantity: 1,
-        price: 500,
+        price: 129000,
         status: "Processing"
     }
 ] }) => {
@@ -130,9 +130,9 @@ const OrderDetails = ({ order = {
                                             <div className="text-muted">
                                                 Qty: {product.quantity} × ₹{product.price.toFixed(2)}
                                             </div>
-                                            <span className={`badge bg-${getStatusColor(product.status)}-subtle text-${getStatusColor(product.status)}`}>
+                                            {/* <span className={`badge bg-${getStatusColor(product.status)}-subtle text-${getStatusColor(product.status)}`}>
                                                 {product.status}
-                                            </span>
+                                            </span> */}
                                         </div>
                                     </div>
                                     <div className="ms-3 text-end">
@@ -145,7 +145,8 @@ const OrderDetails = ({ order = {
                                     <div className="col-md-5">
                                         <div className="d-flex justify-content-between mb-2">
                                             <span>Subtotal</span>
-                                            <span>₹{(order.total - order.shippingCharge).toFixed(2)}</span>
+                                            <span>₹{(order.total).toFixed(2)}</span>
+                                            {/* <span>₹{(order.total - order.shippingCharge).toFixed(2)}</span> */}
                                         </div>
                                         <div className="d-flex justify-content-between mb-2">
                                             <span>Shipping</span>
@@ -153,7 +154,7 @@ const OrderDetails = ({ order = {
                                         </div>
                                         <div className="d-flex justify-content-between fw-bold">
                                             <span>Total</span>
-                                            <span>₹{order.total.toFixed(2)}</span>
+                                            <span>₹{(order.total + order.shippingCharge).toFixed(2)}</span>
                                         </div>
                                     </div>
                                 </div>

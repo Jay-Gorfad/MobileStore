@@ -74,7 +74,8 @@ const UpdatePasswordForm = () => {
         }
 
         setErrors({});
-        toast.success('Form submitted successfully!');
+        alert("Password change successfully!");
+        // toast.success('Password change successfully!');
     };
 
     return (

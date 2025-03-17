@@ -67,22 +67,45 @@ const BillingAddressForm = () => {
     };
     
     
-    
     const handleSubmit = (e) => {
         e.preventDefault();
         const newErrors = {};
+        
+        // Validate all fields
         Object.keys(formData).forEach(field => {
             const error = validateField(field, formData[field]);
-            if (error) newErrors[field] = error;
+            if (error) {
+                newErrors[field] = error;
+            }
         });
-
-        if (newErrors.length > 0) {
+    
+        // If there are errors, update state and return
+        if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             return;
         }
+    
+        // No errors, clear previous errors and show success message
         setErrors({});
         toast.success('Billing details saved successfully!');
     };
+    
+    
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     const newErrors = {};
+    //     Object.keys(formData).forEach(field => {
+    //         const error = validateField(field, formData[field]);
+    //         if (error) newErrors[field] = error;
+    //     });
+
+    //     if (newErrors.length > 0) {
+    //         setErrors(newErrors);
+    //         return;
+    //     }
+    //     setErrors({});
+    //     toast.success('Billing details saved successfully!');
+    // };
 
     return (
         <div >

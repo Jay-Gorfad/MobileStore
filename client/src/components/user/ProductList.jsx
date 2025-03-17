@@ -59,7 +59,8 @@ const ProductList = () => {
     ];
 
     const handleWishlistClick = () => {
-        toast.success("Product added to wishlist successfully!");
+        alert("Product added to wishlist successfully!");
+        // toast.success("Product added to wishlist successfully!");
     };
 
     return (

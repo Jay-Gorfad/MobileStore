@@ -44,8 +44,8 @@ const UpdateProfileForm = () => {
                     error = `${name === 'firstName' ? "First" : "Last"} name is required`;
                 else if (!nameRegex.test(value))
                     error = "Only letters are allowed";
-                else if (value.length < 2 || value.length > 30)
-                    error = "Must be between 2 and 30 characters";
+                else if (value.length < 3 || value.length > 30)
+                    error = "Must be between 3 and 30 characters";
                 break;
 
             case 'phone':
@@ -86,7 +86,8 @@ const UpdateProfileForm = () => {
         }
 
         setErrors({});
-        toast.success('Profile updated successfully!', { position: "top-right" });
+        alert("Profile updated successfully!");
+        // toast.success('Profile updated successfully!', { position: "top-right" });
     };
 
     return (

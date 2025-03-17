@@ -125,7 +125,8 @@ const ProductDetails = () => {
     const submitReview = (e) => {
         e.preventDefault();
         if (validateReview()) {
-            toast.success("Review submitted successfully!");
+            alert("Review submitted successfully!");
+            // toast.success("Review submitted successfully!");
             setReview({ rating: "", review: "" });
             setErrors({});
         }
@@ -140,7 +141,8 @@ const ProductDetails = () => {
     
     const handleCartSubmit = ()=>{
         if (validateQuantity()) {
-            toast.success("Product added to cart successfully!");
+            alert("Product added to cart successfully!");
+            // toast.success("Product added to cart successfully!");
             setSelectedQuantity(1);
             setErrors({});
         }

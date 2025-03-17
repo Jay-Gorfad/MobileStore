@@ -45,7 +45,7 @@ const Login = () => {
         }
 
         setErrors({});
-        toast.success("Login successful!");
+        alert("Login successful!");
     };
 
     return (

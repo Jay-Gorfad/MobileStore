@@ -26,6 +26,8 @@ const Contact = () => {
 		switch (name) {
 			case "contactName":
 				if (!value.trim()) error = "Name is required";
+				else if (value.length < 3)
+					error = "Name must be between 3 and 50 characters";
 				break;
 			case "contactEmail":
 				if (!value.trim()) error = "Email is required";
@@ -77,8 +79,8 @@ const Contact = () => {
 		<div className="contact-page bg-light min-vh-100">
 			<div className="container py-5">
 				<div className="text-center mb-5">
-					<h1 className="display-4 fw-bold text-primary mb-3">Get in Touch</h1>
-					<p className="lead text-muted">We'd love to hear from you. Let us know how we can help.</p>
+					<h1 className="display-4 fw-bold text-primary mb-3">Contact Us</h1>
+					{/* <p className="lead text-muted">We'd love to hear from you. Let us know how we can help.</p> */}
 				</div>
 
 				<div className="row g-4 justify-content-center">
@@ -106,7 +108,7 @@ const Contact = () => {
 								<i className="fas fa-map-marker-alt text-primary fs-5 me-3"></i>
 								<div>
 									<div className="text-muted small">Address</div>
-									<div className="fw-medium">123 Business Street,<br />Tech Park, Rajkot - 360002</div>
+									<div className="fw-medium">Kothariya Road,<br />Rajkot - 360002</div>
 								</div>
 							</div>
 
