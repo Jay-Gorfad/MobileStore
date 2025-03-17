@@ -10,33 +10,65 @@ const OrdersTable = () => {
 
   return (
     <div className="table-responsive">
-      <table className="table table-striped table-hover text-center">
-        <thead className="table-dark">
-          <tr className="p-5">
-            <th className="text-start">Order ID</th>
-            <th>Order Date</th>
-            <th>Quantity</th>
-            <th>Total Price</th>
-            <th>Actions</th>
+    <table className="table table-bordered text-center align-middle">
+      <thead style={{ backgroundColor: "#007bff", color: "white" }}>
+        <tr>
+          <th className="text-start px-3">Order ID</th>
+          <th>Order Date</th>
+          <th>Quantity</th>
+          <th>Total Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {orders.map((order) => (
+          <tr key={order.id}>
+            <td className="text-start px-3">{order.id}</td>
+            <td>{order.date}</td>
+            <td>{order.quantity}</td>
+            <td>₹{order.total}.00</td>
+            <td>
+              <Link className="btn btn-sm text-white" 
+                    style={{ backgroundColor: '#007bff' }} 
+                    to={`/order`}>
+                View Order
+              </Link>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id}>
-              <td className="text-start">{order.id}</td>
-              <td>{order.date}</td>
-              <td>{order.quantity}</td>
-              <td>₹{order.total}.00</td>
-              <td>
-                <Link className="btn btn-primary btn-sm" to={`/order`}>
-                  View Order
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
+  </div>
+  
+
+    // <div className="table-responsive">
+    //   <table className="table table-striped table-hover text-center">
+    //     <thead className="table-dark">
+    //       <tr className="p-5">
+    //         <th className="text-start">Order ID</th>
+    //         <th>Order Date</th>
+    //         <th>Quantity</th>
+    //         <th>Total Price</th>
+    //         <th>Actions</th>
+    //       </tr>
+    //     </thead>
+    //     <tbody>
+    //       {orders.map((order) => (
+    //         <tr key={order.id}>
+    //           <td className="text-start">{order.id}</td>
+    //           <td>{order.date}</td>
+    //           <td>{order.quantity}</td>
+    //           <td>₹{order.total}.00</td>
+    //           <td>
+    //             <Link className="btn btn-primary btn-sm" to={`/order`}>
+    //               View Order
+    //             </Link>
+    //           </td>
+    //         </tr>
+    //       ))}
+    //     </tbody>
+    //   </table>
+    // </div>
   );
 };
 

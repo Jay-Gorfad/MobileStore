@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const WishlistTable = () => {
     const wishlist = [
         { id: 1, name: "IPhone 15 Pro Max", price: 139000, image: "img/items/products/67409349bfcac_71yzJoE7WlL._SX679_.jpg" },
-        { id: 2, name: "Galaxy S23 Ultra", price: 129000, image: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg" },
+        { id: 2, name: "Samsung Galaxy S23 Ultra", price: 129000, image: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg" },
         { id: 3, name: "Oppo A3x", price: 16999, image: "img/items/products/671874f14018foppoa3x.jpg" }
     ];
 

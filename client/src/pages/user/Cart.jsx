@@ -16,7 +16,7 @@ const Cart = () => {
 		},
 		{
 			id: 2,
-			name: "Galaxy S23 Ultra",
+			name: "Samsung Galaxy S23 Ultra",
 			price: 129000,
 			image: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
 			quantity: 1,

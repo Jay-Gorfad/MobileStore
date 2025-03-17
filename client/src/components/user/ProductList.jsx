@@ -19,7 +19,7 @@ const ProductList = () => {
         },
         {
             id: 2,
-            name: "Galaxy S23 Ultra",
+            name: "Samsung Galaxy S23 Ultra",
             category: "Samsung",
             categoryId: 2,
             image: "670b6b6e1f2d1samsungs23ultra.jpg",
@@ -60,7 +60,6 @@ const ProductList = () => {
 
     const handleWishlistClick = () => {
         alert("Product added to wishlist successfully!");
-        // toast.success("Product added to wishlist successfully!");
     };
 
     return (
@@ -85,18 +84,19 @@ const ProductList = () => {
                                             -{product.discount}% OFF
                                         </span>
                                     )}
+                                    <Link to="/wishlist">
                                     <button 
                                         className="btn position-absolute top-0 end-0 m-2 p-2 bg-white rounded-circle shadow-sm"
                                         onClick={handleWishlistClick}
                                         style={{ width: "35px", height: "35px", display: "flex", alignItems: "center", justifyContent: "center" }}
                                     >
                                         <i className="fa-regular fa-heart text-primary small"></i>
-                                    </button>
+                                    </button></Link>
                                 </div>
                                 
                                 <div className="card-body d-flex flex-column pt-2 justify-content-center align-items-center">
                                     <Link to="/product" className="text-decoration-none">
-                                        <h6 className="card-title text-dark mb-1 small fw-semibold">{product.name}</h6>
+                                        <h6 className="card-title text-dark mb-1 medium fw-semibold text-nowrap">{product.name}</h6>
                                     </Link>
                                     <small className="text-muted mb-2 smaller">{product.category}</small>
                                     
@@ -128,7 +128,7 @@ const ProductList = () => {
                                     ) : (
                                         <Link 
                                             to="/cart" 
-                                            className="btn btn-primary btn-md w-100 mt-auto d-flex align-items-center justify-content-center gap-2 rounded-pill"
+                                            className="btn btn-primary btn-md p-2 w-100 mt-auto d-flex align-items-center justify-content-center gap-2 rounded-pill"
                                         >
                                             <i className="fa fa-shopping-cart small"></i>
                                             <span className="small">Add to Cart</span>

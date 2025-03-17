@@ -174,7 +174,7 @@ const CheckoutSummary = ({setSelectedPayment, selectedPayment, handleSubmit, err
 		},
 		{
 			id: 2,
-			productName: "Galaxy S23 Ultra",
+			productName: "Samsung Galaxy S23 Ultra",
 			price: 129000,
 			productImage: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
 			quantity: 1,

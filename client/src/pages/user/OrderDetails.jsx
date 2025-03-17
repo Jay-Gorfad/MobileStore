@@ -31,7 +31,7 @@ const OrderDetails = ({ order = {
     },
     {
         productId: 2,
-        productName: "Galaxy S23 Ultra",
+        productName: "Samsung Galaxy S23 Ultra",
         productImage: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
         quantity: 1,
         price: 129000,
@@ -81,7 +81,7 @@ const OrderDetails = ({ order = {
                             <h4 className="mb-0">Order #{order.orderId}</h4>
                         </div>
                         <div className="col-auto">
-                            <span className={`badge bg-${getStatusColor(order.status)} rounded-pill px-3`}>
+                            <span className={`badge bg-${getStatusColor(order.status)} rounded-pill px-3 p-2`}>
                                 {order.status}
                             </span>
                         </div>

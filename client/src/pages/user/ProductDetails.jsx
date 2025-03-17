@@ -28,7 +28,7 @@ const ProductDetails = () => {
     const reviews = [
         {
             id: 1,
-            user: "John Doe",
+            user: "Jay Gorfad",
             rating: 5,
             review: "Excellent Mobile",
             date: "March 10, 2025",
@@ -38,7 +38,7 @@ const ProductDetails = () => {
         },
         {
             id: 2,
-            user: "Jane Doe", 
+            user: "Prince Bhatt", 
             rating: 4,
             review: "Good Processor.",
             date: "March 11, 2025",
@@ -48,7 +48,7 @@ const ProductDetails = () => {
         },
         {
             id: 3,
-            user: "Michael Smith",
+            user: "Jay Barasiya",
             rating: 5,
             review: "Good Camera",
             date: "March 12, 2025",
@@ -222,12 +222,13 @@ const ProductDetails = () => {
                                     <div className="text-danger mt-1 small">{errors.quantity}</div>
                                 )}
                             </div>
+                            <Link to="/cart">
                             <button 
                                 onClick={handleCartSubmit} 
                                 className="btn btn-primary btn-lg w-100"
                             >
                                 Add to Cart
-                            </button>
+                            </button></Link>
                         </div>
                     </div>
                 </div>
