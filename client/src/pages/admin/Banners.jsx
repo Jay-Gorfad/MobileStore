@@ -4,8 +4,8 @@ import Swal from "sweetalert2";
 
 const Banners = () => {
     const banners = [
-        { id: 1, image: "/img/banners/670a7ae6b300315promaxn1.jpg", order: -1, status: 1, label: "Banner for free delivery" },
-        { id: 2, image: "/img/banners/banner1.webp", order: -2, status: 0, label: "Banner for first order discount" },
+        // { id: 1, image: "/img/banners/670a7ae6b300315promaxn1.jpg", order: -1, status: 1, label: "Banner for free delivery" },
+        // { id: 2, image: "/img/banners/banner1.webp", order: -2, status: 0, label: "Banner for first order discount" },
         { id: 3, image: "/img/banners/hero.png", order: 1, status: 1 },
         { id: 4, image: "/img/banners/banner4.webp", order: 2, status: 0 },
     ];

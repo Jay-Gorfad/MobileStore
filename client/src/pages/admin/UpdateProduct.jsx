@@ -4,13 +4,13 @@ import { toast } from "react-toastify";
 
 const UpdateProduct = () => {
     const [formData, setFormData] = useState({
-        productName: "Sample Product",
+        productName: "iPhone",
         productDiscount: "10",
-        costPrice: "100",
-        salePrice: "120",
-        productStock: "50",
+        costPrice: "100000",
+        salePrice: "120000",
+        productStock: "5",
         productCategory: "1",
-        productDescription: "Sample description",
+        productDescription: "iPhone 16 128 GB: 5G Mobile Phone with Camera Control, A18 Chip and a Big Boost in Battery Life.",
         productImage: null,
     });
     const [errors, setErrors] = useState({});
