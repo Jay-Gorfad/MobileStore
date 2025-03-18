@@ -106,7 +106,7 @@ const CartItem = ({ product, onQuantityChange }) => {
 						</button>
 					</div>
 					<div className="text-muted small mb-2">₹{product.price}</div>
-					<div className="d-flex align-items-center">
+					<div className="d-flex align-items-center flex-sm-nowrap flex-wrap">
 						<div className="input-group input-group-sm" style={{ width: '120px' }}>
 							<button
 								className="btn btn-outline-secondary"

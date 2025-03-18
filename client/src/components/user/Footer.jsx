@@ -6,14 +6,14 @@ const Footer = (props) => {
     return (
         <footer className="bg-light py-5 mt-5">
             <div className="container">
-                <div className="row g-5">
+                <div className="row g-4 justify-content-center text-center text-md-start">
                     <div className="col-12 col-md-4">
-                        <div className="pe-md-5">
+                        <div className="px-md-5">
                             <Link to="/" className="text-decoration-none">
                                 <h2 className="fw-bold text-primary mb-2">MobiTrendz</h2>
                             </Link>
                             <p className="text-muted mb-4">Swipe, Shop, Shine</p>
-                            <div className="d-flex gap-3">
+                            <div className="d-flex gap-3 justify-content-center justify-content-md-start">
                                 <a href="#" className="text-muted hover-primary">
                                     <i className="bi bi-facebook fs-5"></i>
                                 </a>
@@ -68,7 +68,7 @@ const Footer = (props) => {
                 </div>
 
                 <div className="border-top pt-4 mt-4">
-                    <div className="row align-items-center">
+                    <div className="row">
                         <div className="col-12 text-center">
                             <p className="text-muted mb-0">
                                 © 2025 MobiTrendz. All rights reserved.
@@ -83,3 +83,4 @@ const Footer = (props) => {
 }
 
 export default Footer
+

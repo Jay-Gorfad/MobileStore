@@ -70,22 +70,22 @@ input[type="checkbox"]:checked {
 }
 
 /* Scrollbar*/
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
     width: 1.5vh;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--primary);
+    background: white;
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--dark-primary);
     border-radius: 6px;
-}
+} */
 
-::-webkit-scrollbar-thumb:hover {
+/* ::-webkit-scrollbar-thumb:hover {
     background: #555;
-}
+} */
 
 .links{
     margin-left: 3vw;
@@ -1170,3 +1170,4 @@ sidebar h6{
     margin:12px !important;
 }
 
+}
