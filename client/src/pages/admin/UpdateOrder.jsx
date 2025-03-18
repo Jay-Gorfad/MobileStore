@@ -9,12 +9,12 @@ const AddOrder = () => {
         products: [
             { productId: "", quantity: "" }
         ],
-        firstName: "John",
-        lastName: "Doe",
+        firstName: "Jay",
+        lastName: "Gorfad",
         address: "123 Main Street",
-        city: "New York",
-        state: "NY",
-        pinCode: "10001",
+        city: "Rajkot",
+        state: "Gujrat",
+        pinCode: "360002",
         phone: "9876543210",
         shippingCharge: "50",
         status: "Pending",

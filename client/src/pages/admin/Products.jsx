@@ -6,25 +6,36 @@ const ProductList = () => {
     const [products] = useState([
         {
             id: 1,
-            name: "Fresh Apples",
-            image: "/img/items/products/66ee9001ceeaeapple.webp",
-            salePrice: 150,
+            name: "iPhone 16 Pro",
+            image: "/img/items/products/670a1a5f5a213_15Plus.jpg",  // Use correct path
+            salePrice: 150000,
             discount: 5,
-            soldQuantity: 500,
-            stock: 100,
-            category: "Fruits"
+            soldQuantity: 50,
+            stock: 10,
+            category: "iPhone"
         },
         {
             id: 2,
-            name: "Organic Carrots",
-            image: "/img/items/products/carrots.webp",
-            salePrice: 80,
+            name: "Samsung Galaxy S24",
+            image: "/img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
+            salePrice: 120000,
             discount: 10,
-            soldQuantity: 300,
-            stock: 50,
-            category: "Vegetables"
-        }
+            soldQuantity: 30,
+            stock: 15,
+            category: "Samsung"
+        },
+        {
+            id: 1,
+            name: "iPhone 16 Pro",
+            image: "/img/items/products/670ba3dc98da615.jpg",  // Use correct path
+            salePrice: 150000,
+            discount: 5,
+            soldQuantity: 50,
+            stock: 10,
+            category: "iPhone"
+        },
     ]);
+    
 
     const handleDelete = (productId) => {
         Swal.fire({

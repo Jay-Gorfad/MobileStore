@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 const UpdateReview = () => {
     const [formData, setFormData] = useState({
         productid: "Apple",
-        rname: "John Doe",
+        rname: "Prince Bhatt",
         rating: "5",
         review: "Great product! Highly recommended."
     });

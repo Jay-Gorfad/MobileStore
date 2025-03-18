@@ -5,18 +5,26 @@ import Swal from "sweetalert2";
 const orders = [
   {
     orderId: 1,
-    customerName: "John Doe",
+    customerName: "Jay Barasiya",
     orderDate: "2025-03-12",
     totalQuantity: 3,
-    totalPrice: 1500.5,
+    totalPrice: 150000.5,
     orderStatus: "Pending",
   },
   {
     orderId: 2,
-    customerName: "Jane Smith",
+    customerName: "Prince Bhatt",
     orderDate: "2025-03-11",
     totalQuantity: 2,
-    totalPrice: 900.0,
+    totalPrice: 120000.0,
+    orderStatus: "Shipped",
+  },
+  {
+    orderId: 3,
+    customerName: "Jay Gorfad",
+    orderDate: "2025-03-11",
+    totalQuantity: 4,
+    totalPrice: 120000.0,
     orderStatus: "Shipped",
   },
 ];
@@ -76,7 +84,7 @@ const OrderTable = () => {
   );
 };
 
-const handleDelete = () => {
+const handleDelete = () => { 
   Swal.fire({
 			title: "Are you sure?",
 			text: "You won't be able to revert this!",

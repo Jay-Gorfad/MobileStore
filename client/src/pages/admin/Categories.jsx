@@ -4,9 +4,11 @@ import { Link } from "react-router-dom";
 
 const Categories = () => {
     const [categories, setCategories] = useState([
-        { id: 1, name: "Fruits", productCount: 10 },
-        { id: 2, name: "Vegetables", productCount: 15 },
-        { id: 3, name: "Dairy", productCount: 8 }
+        { id: 1, name: "iPhone", productCount: 10 },
+        { id: 2, name: "Samsung", productCount: 15 },
+        { id: 3, name: "Realme", productCount: 8 },
+        { id: 4, name: "Oppo", productCount: 15 }
+
     ]);
 
     const handleDelete = (categoryId) => {

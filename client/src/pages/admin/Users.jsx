@@ -6,9 +6,9 @@ const Users = () => {
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([
-        { id: 1, profilePicture: "default-img.png", fullName: "John Doe", email: "john@example.com", phone: "1234567890", status: 1 },
-        { id: 2, profilePicture: "default-img.png", fullName: "Jane Smith", email: "jane@example.com", phone: "9876543210", status: 0 },
-        { id: 3, profilePicture: "default-img.png", fullName: "Alice Brown", email: "alice@example.com", phone: "4567891230", status: -1 },
+        { id: 1, profilePicture: "default-img.png", fullName: "Jay Barasiya", email: "jaybarasiya07@gmail.com", phone: "8141809467", status: 1 },
+        { id: 2, profilePicture: "default-img.png", fullName: "Jay Gorfad", email: "jaygorfad000@gmail.com", phone: "7600245040", status: 0 },
+        { id: 3, profilePicture: "default-img.png", fullName: "Prince Bhatt", email: "princebhatt749@gmail.com", phone: "9106551273", status: -1 },
     ]);
 
     const handleDelete = () => {

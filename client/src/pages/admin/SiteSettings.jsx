@@ -5,8 +5,8 @@ import Swal from "sweetalert2";
 const SiteSettings = () => {
   // Static Data
   const [aboutContent, setAboutContent] = useState("This is about page content.");
-  const [contactEmail, setContactEmail] = useState("contact@example.com");
-  const [contactNumber, setContactNumber] = useState("1234567890");
+  const [contactEmail, setContactEmail] = useState("mobitrendz@gmail.com");
+  const [contactNumber, setContactNumber] = useState("9632587412");
   const [errors, setErrors] = useState({});
 
   // Validations

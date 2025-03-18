@@ -17,10 +17,10 @@ const AddProduct = () => {
     const [errors, setErrors] = useState({});
 
     const categories = [
-        { id: "1", name: "Fruits" },
-        { id: "2", name: "Vegetables" },
-        { id: "3", name: "Dairy" },
-        { id: "-", name: "None" },
+        { id: "1", name: "iPhone" },
+        { id: "2", name: "Samsung" },
+        { id: "3", name: "Realme" },
+        { id: "-", name: "Oppo" },
     ];
 
     const handleChange = (e) => {

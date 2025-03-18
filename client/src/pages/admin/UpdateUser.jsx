@@ -4,11 +4,11 @@ import { toast } from "react-toastify";
 
 const UpdateUser = () => {
     const [formData, setFormData] = useState({
-        firstName: "John",
-        lastName: "Doe",
-        email: "johndoe@example.com",
-        phone: "1234567890",
-        password: "123456",
+        firstName: "Jay",
+        lastName: "Barasiya",
+        email: "jaybarasiya07@gmail.com.com",
+        phone: "8141809467",
+        password: "99259925",
         userImage: ""
     });
 

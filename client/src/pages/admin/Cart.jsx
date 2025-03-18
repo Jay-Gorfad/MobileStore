@@ -4,12 +4,12 @@ import Swal from "sweetalert2";
 
 const Cart = () => {
     const userId = 101;
-    const user = { firstName: "John", lastName: "Doe" };
+    const user = { firstName: "Jay", lastName: "Barasiya" };
 
     const [cart, setCart] = useState([
-        { id: 1, name: "Apple", quantity: 2, price: 50, image: "66ee9001ceeaeapple.webp" },
-        { id: 2, name: "Cookie cake", quantity: 1, price: 40, image: "cookiecake.webp" },
-        { id: 3, name: "Hide & Seek", quantity: 3, price: 20, image: "hide&seek.webp" },
+        { id: 1, name: "Apple", quantity: 2, price: 150000, image: "670a1a5f5a213_15Plus.jpg" },
+        { id: 2, name: "Samsung", quantity: 1, price: 120000, image: "673ddf45e9a86_samsungs23ultra.jpg" },
+       
     ]);
 
     const handleRemove = () => {

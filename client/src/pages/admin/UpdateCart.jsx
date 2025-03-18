@@ -31,7 +31,7 @@ const UpdateCart = () => {
                     <li className="breadcrumb-item active" aria-current="page">Update Cart</li>
                 </ol>
             </nav>
-      <h5>User: John Doe</h5>
+      <h5>User: Jay Barasiya</h5>
 
       <div className="card mb-4">
         <div className="card-body">

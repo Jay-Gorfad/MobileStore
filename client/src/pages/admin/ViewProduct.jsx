@@ -5,32 +5,39 @@ import Swal from "sweetalert2";
 const ViewProduct = () => {
   const product = {
     productId: 101,
-    productName: "Chocolate Cake",
+    productName: "iPhone 16",
     rating: 4.5,
-    description: "Delicious chocolate cake with rich frosting.",
+    description: "iPhone 16 128 GB: 5G Mobile Phone with Camera Control, A18 Chip and a Big Boost in Battery Life. ",
     stock: 25,
-    costPrice: 300,
-    salePrice: 400,
+    costPrice: 150000,
+    salePrice: 151000,
     discount: 10,
-    priceAfterDiscount: 360,
-    category: "Bakery > Desserts",
+    priceAfterDiscount: 9000,
+    category: "iPhone",
     soldQuantity: 150,
-    image: "cookiecake.webp",
+    image: "670a1a5f5a213_15Plus.jpg",
   };
 
   const reviews = [
     {
       reviewId: 1,
-      username: "John Doe",
+      username: "Jay Gorfad",
       rating: 4,
       review: "Great product!",
       reply: "Thank you for your feedback!",
     },
     {
       reviewId: 2,
-      username: "Jane Smith",
+      username: "Jay Barasiya",
       rating: 5,
-      review: "Loved it! Highly recommended.",
+      review: "Average experience.",
+      reply: "",
+    },
+    {
+      reviewId: 3,
+      username: "Prince Bhatt",
+      rating: 3,
+      review: "Excellent quality!",
       reply: "",
     },
   ];
