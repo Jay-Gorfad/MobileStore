@@ -50,7 +50,7 @@ const OrderTable = () => {
               <tr key={order.orderId}>
                 <td>{order.orderId}</td>
                 <td>
-                  <Link to={`/admin/user-details`}>{order.customerName}</Link>
+                <Link to={`/admin/user-details`} style={{ color: "blue", textDecoration: "none" }}>{order.customerName}</Link>
                 </td>
                 <td>{order.orderDate}</td>
                 <td>{order.totalQuantity}</td>

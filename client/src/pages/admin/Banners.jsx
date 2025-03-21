@@ -46,7 +46,9 @@ const Banners = () => {
                 <div>
                     <h1 class="mt-4">Banner Management</h1>
                     <ol class="breadcrumb mb-4">
-                        <li class="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
+                        <li class="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
+  Dashboard
+</Link></li>
                         <li class="breadcrumb-item active">Banners</li>
                     </ol>
                 </div>

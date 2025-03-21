@@ -35,7 +35,9 @@ const Users = () => {
                 <div>
                     <h1>User Management</h1>
                     <ol className="breadcrumb mb-0">
-                        <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
+                        <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
+  Dashboard
+</Link></li>
                         <li className="breadcrumb-item active">Users</li>
                     </ol>
                 </div>

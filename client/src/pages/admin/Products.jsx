@@ -64,7 +64,9 @@ const ProductList = () => {
                 <div>
                     <h1>Products</h1>
                     <ol className="breadcrumb mb-0">
-                        <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
+                        <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
+  Dashboard
+</Link></li>
                         <li className="breadcrumb-item active">Products</li>
                     </ol>
                 </div>

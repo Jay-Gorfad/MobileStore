@@ -51,7 +51,9 @@ const SiteSettings = () => {
           <h1>Site Settings</h1>
           <ol className="breadcrumb mb-0">
             <li className="breadcrumb-item">
-              <Link to="/admin">Dashboard</Link>
+            <Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
+  Dashboard
+</Link>
             </li>
             <li className="breadcrumb-item active">Site Settings</li>
           </ol>

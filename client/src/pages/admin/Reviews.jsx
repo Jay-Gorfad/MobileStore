@@ -81,7 +81,9 @@ const Reviews = () => {
             <div>
                 <h1 className="mt-4">Review Management</h1>
                 <ol className="breadcrumb mb-4">
-                    <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
+                    <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
+  Dashboard
+</Link></li>
                     <li className="breadcrumb-item active">Reviews</li>
                 </ol>
             </div>
@@ -111,11 +113,11 @@ const Reviews = () => {
                         style={{ width: 50, height: 50, objectFit: "cover" }}
                         className="me-2"
                       />
-                      <Link to="/admin/view-product">{review.productName}</Link>
+                      <Link to="/admin/view-product" style={{ color: "blue", textDecoration: "none" }}>{review.productName}</Link>
                     </div>
                   </td>
                   <td>
-                    <Link to="/admin/user-details">{review.userName}</Link>
+                    <Link to="/admin/user-details" style={{ color: "blue", textDecoration: "none" }}>{review.userName}</Link>
                   </td>
                   <td>
                     <span className="text-warning">
