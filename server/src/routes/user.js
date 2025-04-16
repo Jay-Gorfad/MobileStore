@@ -12,13 +12,14 @@ router.post("/login", userController.login);
 router.post("/send-otp", userController.sendOtp);
 router.post("/verify-otp", userController.verifyOtp);
 router.post("/reset-password", userController.resetPassword);
+router.put("/update-password", userController.updatePassword);
 router.get("/verify-email", userController.verifyEmail);
 
 // User CRUD
 router.post("/", upload.single("profilePicture"), userController.createUser);
 router.get("/", userController.getAllUsers);
 router.get("/:id", userController.getUserById);
-router.put("/:id", userController.updateUser);
+router.put("/:id", upload.single("profilePicture"),  userController.updateUser);
 router.delete("/:id", userController.deleteUser);
 
 module.exports = router;

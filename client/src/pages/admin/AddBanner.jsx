@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";  // You will use axios to make the API call
 
 const AddBanner = () => {
     const [formData, setFormData] = useState({
@@ -10,6 +11,9 @@ const AddBanner = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);  // Loading state to disable button and show loading spinner
+
+    const navigate = useNavigate();  // Initialize navigate function
 
     const handleChange = (e) => {
         const { name, value, type, files } = e.target;
@@ -48,37 +52,64 @@ const AddBanner = () => {
         return error;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         const formErrors = {};
         Object.keys(formData).forEach((field) => {
             const error = validateField(field, formData[field]);
             if (error) formErrors[field] = error;
         });
-
+    
         if (Object.values(formErrors).some((error) => error)) {
             setErrors(formErrors);
             return;
         }
-
+    
         setErrors({});
-        toast.success("Banner added successfully!");
+        setLoading(true);  // Set loading to true while the request is being processed
+    
+        const formDataToSubmit = new FormData();
+        formDataToSubmit.append("bannerImage", formData.bannerImage);  // Ensure it's correct field name
+        formDataToSubmit.append("viewOrder", formData.bannerOrder);  // Correct the field name here
+        formDataToSubmit.append("activeStatus", formData.bannerStatus);  // Correct the field name here
+        formDataToSubmit.append("type", "slider");  
+    
+        try {
+            await axios.post("http://localhost:8000/banners", formDataToSubmit, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            toast.success("Banner added successfully!");
+            navigate("/admin/banners"); 
+            // Reset form data on successful submission
+            setFormData({
+                bannerImage: null,
+                bannerOrder: "",
+                bannerStatus: "1",
+            });
+        } catch (error) {
+            console.error("Error adding banner:", error);
+            toast.error("Failed to add banner. Please try again.");
+        } finally {
+            setLoading(false);  // Set loading to false after the request is complete
+        }
     };
+    
 
     return (
         <div>
             <h1 className="mt-4">Add Banner</h1>
             <ol className="breadcrumb mb-4">
-				<li className="breadcrumb-item">
-					<Link to="/admin">Dashboard</Link>
-				</li>
                 <li className="breadcrumb-item">
-					<Link to="/admin/banners">Banners</Link>
-				</li>
-				<li className="breadcrumb-item active">Add Banner</li>
-			</ol>
-            
+                    <Link to="/admin">Dashboard</Link>
+                </li>
+                <li className="breadcrumb-item">
+                    <Link to="/admin/banners">Banners</Link>
+                </li>
+                <li className="breadcrumb-item active">Add Banner</li>
+            </ol>
 
             <div className="card mb-4">
                 <div className="card-body">
@@ -129,7 +160,17 @@ const AddBanner = () => {
                             {errors.bannerStatus && <p className="text-danger">{errors.bannerStatus}</p>}
                         </div>
 
-                        <button type="submit" className="btn btn-primary">Add Banner</button>
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary" 
+                            disabled={loading}  // Disable the button while loading
+                        >
+                            {loading ? (
+                                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            ) : (
+                                "Add Banner"
+                            )}
+                        </button>
                     </form>
                 </div>
             </div>

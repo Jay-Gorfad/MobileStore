@@ -1,33 +1,86 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import DataTable from "react-data-table-component";
+import axios from "axios";
 
 const Users = () => {
     const navigate = useNavigate();
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const [users, setUsers] = useState([
-        { id: 1, profilePicture: "default-img.png", fullName: "Jay Barasiya", email: "jaybarasiya07@gmail.com", phone: "8141809467", status: 1 },
-        { id: 2, profilePicture: "default-img.png", fullName: "Jay Gorfad", email: "jaygorfad000@gmail.com", phone: "7600245040", status: 0 },
-        { id: 3, profilePicture: "default-img.png", fullName: "Prince Bhatt", email: "princebhatt749@gmail.com", phone: "9106551273", status: -1 },
-    ]);
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get("http://localhost:8000/users");
+            setUsers(response.data || []);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const handleDelete = () => {
-        Swal.fire({
+    const handleDelete = async (userId) => {
+        const result = await Swal.fire({
             title: "Are you sure?",
-            text: `Do you want to delete this user? This action cannot be undone!`,
+            text: "Do you want to delete this user? This action cannot be undone!",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
             confirmButtonText: "Yes, delete it!",
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire("Deleted!", `User has been removed.`, "success");
-            }
         });
+
+        if (result.isConfirmed) {
+            try {
+                await axios.delete(`http://localhost:8000/users/${userId}`);
+                Swal.fire("Deleted!", "User has been removed.", "success");
+                fetchUsers(); // Refresh list
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                Swal.fire("Error!", "Something went wrong while deleting the user.", "error");
+            }
+        }
     };
 
+    const columns = [
+        {
+            name: "User Image",
+            selector: row => (
+                <img
+                    src={row.profilePicture}
+                    alt={row.firstName+" "+row.lastName}
+                    style={{ width: 50, height: 50, objectFit: "cover", borderRadius: "50%" }}
+                />
+            ),
+            sortable: false
+        },
+        { name: "User Name", selector: row => row.firstName+" "+row.lastName, sortable: true },
+        { name: "Email", selector: row => row.email, sortable: true },
+        { name: "Phone", selector: row => row.mobile, sortable: true },
+        {
+            name: "Account Status",
+            selector: row => row.status, 
+            sortable: true
+        },
+        {
+            name: "Actions",
+            cell: row => (
+                <div className="d-flex gap-1">
+                    <Link to={`/admin/user-details/${row._id}`} className="btn btn-info btn-sm">View</Link>
+                    <Link to={`/admin/update-user/${row._id}`} className="btn btn-warning btn-sm">Edit</Link>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>Delete</button>
+                    <Link to={`/admin/cart/${row._id}`} className="btn btn-info btn-sm">Cart</Link>
+                </div>
+            ),
+            width:"250px"
+        }
+    ];
 
+    useEffect(() => {
+        fetchUsers();
+    }, []);
 
     return (
         <div>
@@ -35,9 +88,7 @@ const Users = () => {
                 <div>
                     <h1>User Management</h1>
                     <ol className="breadcrumb mb-0">
-                        <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
-  Dashboard
-</Link></li>
+                        <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
                         <li className="breadcrumb-item active">Users</li>
                     </ol>
                 </div>
@@ -45,43 +96,17 @@ const Users = () => {
             </div>
 
             <div className="card-body">
-                <table className="table border text-nowrap">
-                    <thead className="table-light">
-                        <tr>
-                            <th>User Image</th>
-                            <th>User Name</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Account Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.length > 0 ? (
-                            users.map((user) => (
-                                <tr key={user.id}>
-                                    <td>
-                                        <img src={`/img/users/${user.profilePicture}`} alt={user.fullName} style={{ width: 50, height: 50, objectFit: "cover" }} />
-                                    </td>
-                                    <td>{user.fullName}</td>
-                                    <td>{user.email}</td>
-                                    <td>{user.phone}</td>
-                                    <td>
-                                        {user.status === 1 ? "Active" : user.status === 0 ? "Inactive" : "Deleted"}
-                                    </td>
-                                    <td className="d-flex gap-1">
-                                        <Link to="/admin/user-details" className="btn btn-info btn-sm">View</Link>
-                                        <Link to="/admin/update-user" className="btn btn-warning btn-sm">Edit</Link>
-                                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete()}>Delete</button>
-                                        <Link to="/admin/cart" className="btn btn-info btn-sm">Cart</Link>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr><td colSpan="6">No users to display!</td></tr>
-                        )}
-                    </tbody>
-                </table>
+                <DataTable
+                    columns={columns}
+                    data={users}
+                    progressPending={loading}
+                    pagination
+                    highlightOnHover
+                    responsive
+                    striped
+                    persistTableHead
+                    noDataComponent="No users found."
+                />
             </div>
         </div>
     );

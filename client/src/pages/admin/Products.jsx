@@ -1,41 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import Swal from "sweetalert2";
+import DataTable from "react-data-table-component";
 
 const ProductList = () => {
-    const [products] = useState([
-        {
-            id: 1,
-            name: "iPhone 16 Pro",
-            image: "/img/items/products/670a1a5f5a213_15Plus.jpg",  // Use correct path
-            salePrice: 150000,
-            discount: 5,
-            soldQuantity: 50,
-            stock: 10,
-            category: "iPhone"
+    const customStyles = {
+        rows: {
+            style: {
+                fontSize: '16px', // Increase row font size
+            },
         },
-        {
-            id: 2,
-            name: "Samsung Galaxy S24",
-            image: "/img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
-            salePrice: 120000,
-            discount: 10,
-            soldQuantity: 30,
-            stock: 15,
-            category: "Samsung"
+        headCells: {
+            style: {
+                fontSize: '18px', // Increase header font size
+                fontWeight: 'bold',
+            },
         },
-        {
-            id: 1,
-            name: "iPhone 16 Pro",
-            image: "/img/items/products/670ba3dc98da615.jpg",  // Use correct path
-            salePrice: 150000,
-            discount: 5,
-            soldQuantity: 50,
-            stock: 10,
-            category: "iPhone"
+        cells: {
+            style: {
+                fontSize: '16px', // Increase cell font size
+            },
         },
-    ]);
-    
+    };
+    const [products, setProducts] = useState([]);
+    const [filterText, setFilterText] = useState("");
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await axios.get("http://localhost:8000/products");
+                setProducts(res.data);
+            } catch (err) {
+                console.error("Failed to fetch products:", err);
+            }
+        };
+        fetchProducts();
+    }, []);
 
     const handleDelete = (productId) => {
         Swal.fire({
@@ -45,18 +46,71 @@ const ProductList = () => {
             showCancelButton: true,
             confirmButtonColor: "#d33",
             cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete it!"
-        }).then((result) => {
+            confirmButtonText: "Yes, delete it!",
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                Swal.fire(
-                    "Deleted!",
-                    "The product has been deleted.",
-                    "success"
-                );
-                // Add deletion logic here
+                try {
+                    await axios.delete(`http://localhost:8000/products/${productId}`);
+                    setProducts(products.filter(p => p._id !== productId));
+                    Swal.fire("Deleted!", "Product has been deleted.", "success");
+                } catch (err) {
+                    Swal.fire("Error", "Failed to delete product", "error");
+                }
             }
         });
     };
+
+    const columns = [
+        {
+            name: "Product",
+            selector: row => row.productName,
+            cell: row => (
+                <div className="d-flex align-items-center">
+                    <img src={row.productImage} alt={row.productName} style={{ width: 50, height: 50, objectFit: "cover" }} />
+                    <span className="ms-2">{row.productName}</span>
+                </div>
+            ),
+            sortable: true,
+        },
+        {
+            name: "Price (₹)",
+            selector: row => row.salePrice,
+            sortable: true,
+        },
+        {
+            name: "Discount (%)",
+            selector: row => row.discount,
+            sortable: true,
+        },
+        {
+            name: "Stock",
+            selector: row => row.stock,
+        },
+        {
+            name: "Category",
+            selector: row => row.categoryId?.name || "N/A",
+            sortable: true,
+        },
+        {
+            name: "Actions",
+            cell: row => (
+                <div className="d-flex flex-nowrap">
+                    <Link className="btn btn-info btn-sm me-1" to={`/admin/view-product/${row._id}`}>View</Link>
+                    <Link className="btn btn-success btn-sm me-1" to={`/admin/update-product/${row._id}`}>Update</Link>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>Delete</button>
+                </div>
+            ),
+            width:"210px"
+        },
+    ];
+
+    const filteredItems = products.filter(
+        item =>
+            Object.values(item)
+                .join(" ")
+                .toLowerCase()
+                .includes(filterText.toLowerCase())
+    );
 
     return (
         <div>
@@ -64,57 +118,34 @@ const ProductList = () => {
                 <div>
                     <h1>Products</h1>
                     <ol className="breadcrumb mb-0">
-                        <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
-  Dashboard
-</Link></li>
+                        <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
                         <li className="breadcrumb-item active">Products</li>
                     </ol>
                 </div>
-                <Link className="btn btn-primary text-nowrap" to="/admin/add-product">Add Product</Link>
+                <Link className="btn btn-primary" to="/admin/add-product">Add Product</Link>
             </div>
-            <div className="card-body">
-                <table className="table border text-nowrap">
-                    <thead className="table-light">
-                        <tr>
-                            <th>Product</th>
-                            <th>Price</th>
-                            <th>Discount</th>
-                            <th>Sold Quantity</th>
-                            <th>Stock</th>
-                            <th>Category</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.length > 0 ? (
-                            products.map((product) => (
-                                <tr key={product.id}>
-                                    <td>
-                                        <img src={product.image} alt={product.name} style={{ width: 50, height: 50, objectFit: "cover" }} />
-                                        <span className="ms-2">{product.name}</span>
-                                    </td>
-                                    <td>₹{product.salePrice}</td>
-                                    <td>{product.discount}%</td>
-                                    <td>{product.soldQuantity}</td>
-                                    <td>{product.stock}</td>
-                                    <td>{product.category}</td>
-                                    <td>
-                                        <div className="d-flex flex-nowrap">
-                                            <Link className="btn btn-info btn-sm me-1" to="/admin/view-product">View</Link>
-                                            <Link className="btn btn-success btn-sm me-1" to="/admin/update-product">Update</Link>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(product.id)}>Delete</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="7">There are no products to display!</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+
+            <div className="mb-3">
+                <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search products..."
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                />
             </div>
+
+            <DataTable
+                columns={columns}
+                data={filteredItems}
+                pagination
+                highlightOnHover
+                striped
+                responsive
+                persistTableHead
+                noDataComponent="There are no products to display."
+                customStyles={customStyles}
+            />
         </div>
     );
 };

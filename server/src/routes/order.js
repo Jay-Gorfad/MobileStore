@@ -16,5 +16,7 @@ router.get('/orders/active', orderController.getActiveOrders);
 
 // Get a single order by ID
 router.get('/orders/:orderId', orderController.getOrderById);
+router.get("/has-purchased/:userId/:productId", orderController.hasUserPurchasedProduct);
+
 
 module.exports = router;

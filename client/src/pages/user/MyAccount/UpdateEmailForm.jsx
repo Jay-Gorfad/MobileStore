@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 
 const UpdateEmailForm = () => {
     const navigate = useNavigate();
-    const [email, setEmail] = useState('jaygorfad00@gmail.com');
+    const [email, setEmail] = useState('');
     const [error, setError] = useState(null);
 
     const validateEmail = (value) => {
@@ -32,29 +32,24 @@ const UpdateEmailForm = () => {
     };
 
     return (
-        <div>
             <form onSubmit={handleSubmit}>
-                <div className="form-floating mb-3">
+                <div className="mb-3">
+                    <label htmlFor="email" className="form-label">Email Address</label>
                     <input 
                         type="email" 
-                        className={`form-control ${error ? 'is-invalid' : ''}`}
-                        id="email"
-                        name="email" 
-                        placeholder="name@example.com" 
+                        className="form-control" 
+                        id="email" 
+                        placeholder="Enter your new email" 
                         value={email} 
-                        onChange={handleChange}
+                        onChange={handleChange} 
                     />
-                    <label htmlFor="email">Email address</label>
-                    {error && <div className="invalid-feedback">{error}</div>}
+                    {error && <p className="text-danger mt-2">{error}</p>}
                 </div>
 
                 <div className="d-flex justify-content-end">
-                    <button type="submit" className="btn btn-primary">
-                        Update Email
-                    </button>
+                    <button type="submit" className="btn btn-primary">Update Email</button>
                 </div>
             </form>
-        </div>
     );
 };
 

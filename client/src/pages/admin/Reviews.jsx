@@ -1,169 +1,199 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import DataTable from "react-data-table-component";
+import axios from "axios";
 
 const Reviews = () => {
-    const [reviews, setReviews] = useState([
-        {
-          id: 1,
-          productImage: "670ba3dc98da615.jpg",
-          productName: "iPhone 15 Pro",
-          productId: 101,
-          userName: "Jay Gorfad",
-          userId: 201,
-          rating: 4,
-          review: "Great product!",
-          reply: "Thank you!",
-        },
-        {
-          id: 2,
-          productImage: "671869c0b4d28samsungs23ultra.jpg",
-          productName: "Samsung S23",
-          productId: 102,
-          userName: "Prince Bhatt",
-          userId: 202,
-          rating: 5,
-          review: "Excellent quality!",
-          reply: "Glad you liked it!",
-        },
-        {
-          id: 3,
-          productImage: "670a1a5f5a213_15Plus.jpg",
-          productName: "iPhone 16 Pro",
-          productId: 103,
-          userName: "Jay Barasiya",
-          userId: 203,
-          rating: 3,
-          review: "Average experience.",
-          reply: "Thank you for your feedback!",
-        },
-      ]);
-
+  const [reviews, setReviews] = useState([]);
+  const [filteredReviews, setFilteredReviews] = useState([]);
+  const [search, setSearch] = useState("");
   const [reply, setReply] = useState("");
   const [selectedReview, setSelectedReview] = useState(null);
   const [error, setError] = useState("");
 
-  const handleDelete = (id) => {
-    Swal.fire({
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      const res = await axios.get("http://localhost:8000/reviews"); // Replace with your actual endpoint
+      setReviews(res.data);
+      setFilteredReviews(res.data);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    }
+  };
+
+  useEffect(() => {
+    const result = reviews.filter(
+      (item) =>
+        item.productName?.toLowerCase().includes(search?.toLowerCase()) ||
+        item.userName?.toLowerCase().includes(search?.toLowerCase()) ||
+        item.review?.toLowerCase().includes(search?.toLowerCase())
+    );
+    setFilteredReviews(result);
+  }, [search, reviews]);
+
+  const handleDelete = async (id) => {
+    const confirm = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire("Deleted!", "The review has been deleted.", "success");
-      }
     });
+
+    if (confirm.isConfirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/reviews/${id}`);
+        fetchReviews();
+        Swal.fire("Deleted!", "Review has been deleted.", "success");
+      } catch (err) {
+        console.error(err);
+        Swal.fire("Error", "Could not delete review.", "error");
+      }
+    }
   };
 
-  const handleReplySubmit = () => {
+  const handleReplySubmit = async () => {
     if (reply.trim() === "") {
       setError("Reply cannot be empty!");
       return;
     }
-  
-    const isNewReply = !selectedReview.reply; // Check if it's a new reply
-  
 
-  
-    setReply("");
-    setError("");
-  
-    Swal.fire("Success", isNewReply ? "Reply added successfully!" : "Reply updated successfully!", "success");
+    try {
+      await axios.put(`http://localhost:8000/reviews/${selectedReview._id}/reply`, {
+        reply,
+      });
+
+      setReply("");
+      setError("");
+      setSelectedReview(null);
+      fetchReviews();
+
+      Swal.fire(
+        "Success",
+        selectedReview.reply ? "Reply updated!" : "Reply added!",
+        "success"
+      );
+    } catch (err) {
+      console.error("Reply update error:", err);
+      Swal.fire("Error", "Could not update reply.", "error");
+    }
   };
-  
+
+  const columns = [
+        {
+          name: "Product",
+          selector: (row) => row.productId?.productName,
+          sortable: true,
+          cell: (row) => (
+            <div className="d-flex align-items-center">
+              <img
+                src={row.productId?.productImage || "https://via.placeholder.com/50"} // fallback
+                alt={row.productId?.productName}
+                style={{ width: 50, height: 50, objectFit: "cover", marginRight: 10 }}
+              />
+              <Link to={`/admin/view-product/${row.productId?._id}`}>
+                {row.productId?.productName}
+              </Link>
+            </div>
+          ),
+        },
+        {
+          name: "Username",
+          selector: (row) =>
+            `${row.userId?.firstName || ""} ${row.userId?.lastName || ""}`,
+          sortable: true,
+          cell: (row) => (
+            <Link to={`/admin/user-details/${row.userId?._id}`}>
+              {row.userId?.firstName} {row.userId?.lastName}
+            </Link>
+          ),
+        },      
+    {
+      name: "Rating",
+      selector: (row) => row.rating,
+      sortable: true,
+      cell: (row) => (
+        <span className="text-warning">
+          {Array.from({ length: 5 }, (_, i) => (i < row.rating ? "★" : "☆"))}
+        </span>
+      ),
+    },
+    {
+      name: "Review",
+      selector: (row) => row.review,
+    },
+    {
+      name: "Reply",
+      selector: (row) => row.reply || "-",
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="d-flex flex-nowrap gap-1">
+          <button
+            className="btn btn-primary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#replyModal"
+            onClick={() => {
+              setSelectedReview(row);
+              setReply(row.reply || "");
+              setError("");
+            }}
+          >
+            {row.reply ? "Update Reply" : "Reply"}
+          </button>
+          <Link to={`/admin/update-review/${row._id}`} className="btn btn-info btn-sm">
+            Update
+          </Link>
+          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>
+            Delete
+          </button>
+        </div>
+      ),
+      width:"270px"
+    },
+  ];
+
   return (
     <div>
-        <div className="d-flex justify-content-between align-items-center mt-4 mb-4">
-            <div>
-                <h1 className="mt-4">Review Management</h1>
-                <ol className="breadcrumb mb-4">
-                    <li className="breadcrumb-item"><Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
-  Dashboard
-</Link></li>
-                    <li className="breadcrumb-item active">Reviews</li>
-                </ol>
-            </div>
-            <Link to="/admin/add-review" className="btn btn-primary text-nowrap">Add Review</Link>
+      <div className="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+          <h1>Review Management</h1>
+          <ol className="breadcrumb mb-4">
+            <li className="breadcrumb-item">
+              <Link to="/admin">Dashboard</Link>
+            </li>
+            <li className="breadcrumb-item active">Reviews</li>
+          </ol>
         </div>
-      <div className="card-body">
-        <table className="table border text-nowrap">
-          <thead className="table-light">
-            <tr>
-              <th>Product</th>
-              <th>Username</th>
-              <th>Rating</th>
-              <th>Review</th>
-              <th>Reply</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {reviews.length ? (
-              reviews.map((review) => (
-                <tr key={review.id}>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <img
-                        src={`/img/items/products/${review.productImage}`}
-                        alt={review.productName}
-                        style={{ width: 50, height: 50, objectFit: "cover" }}
-                        className="me-2"
-                      />
-                      <Link to="/admin/view-product" style={{ color: "blue", textDecoration: "none" }}>{review.productName}</Link>
-                    </div>
-                  </td>
-                  <td>
-                    <Link to="/admin/user-details" style={{ color: "blue", textDecoration: "none" }}>{review.userName}</Link>
-                  </td>
-                  <td>
-                    <span className="text-warning">
-                      {Array.from({ length: 5 }, (_, i) =>
-                        i < review.rating ? "★" : "☆"
-                      )}
-                    </span>
-                  </td>
-                  <td>{review.review}</td>
-                  <td>{review.reply ? review.reply : "-"}</td>
-                  <td>
-                    <div className="d-flex flex-nowrap gap-1">
-                      <button
-                        className="btn btn-primary btn-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#replyModal"
-                        onClick={() => {
-                          setSelectedReview(review);
-                          setReply(review.reply || "");
-                          setError("");
-                        }}
-                      >
-                        {review.reply ? "Update Reply" : "Reply"}
-                      </button>
-                      <Link className="btn btn-info btn-sm" to="/admin/update-review">Update</Link>
-
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(review.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="text-center">
-                  No reviews found!
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        <Link to="/admin/add-review" className="btn btn-primary">
+          Add Review
+        </Link>
       </div>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="Search reviews..."
+          className="form-control"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filteredReviews}
+        pagination
+        highlightOnHover
+        responsive
+        striped
+      />
 
       {/* Reply Modal */}
       <div
@@ -176,43 +206,29 @@ const Reviews = () => {
         <div className="modal-dialog">
           <div className="modal-content">
             <div className="modal-header">
-              <h5 className="modal-title" id="replyModalLabel">
+              <h5 className="modal-title">
                 {selectedReview?.reply ? "Update Reply" : "Reply to Review"}
               </h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-              ></button>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" />
             </div>
             <div className="modal-body">
-              <form>
-                <div className="mb-3">
-                  <label htmlFor="reviewReply" className="form-label">
-                    Your Reply
-                  </label>
-                  <textarea
-                    className="form-control"
-                    id="reviewReply"
-                    rows="3"
-                    value={reply}
-                    onChange={(e) => {
-                      setReply(e.target.value);
-                      setError("");
-                    }}
-                  ></textarea>
-                  {error && <div className="text-danger mt-1">{error}</div>}
-                </div>
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleReplySubmit}
-                    >
-                    {selectedReview?.reply ? "Update Reply" : "Add Reply"}
-                </button>
-
-              </form>
+              <textarea
+                className="form-control"
+                rows="3"
+                value={reply}
+                onChange={(e) => {
+                  setReply(e.target.value);
+                  setError("");
+                }}
+              ></textarea>
+              {error && <div className="text-danger mt-1">{error}</div>}
+              <button
+                type="button"
+                className="btn btn-primary mt-3"
+                onClick={handleReplySubmit}
+              >
+                {selectedReview?.reply ? "Update Reply" : "Add Reply"}
+              </button>
             </div>
           </div>
         </div>

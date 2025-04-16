@@ -1,28 +1,37 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const AddReview = () => {
     const [formData, setFormData] = useState({
-        productid: "",
-        userid: "",
+        productId: "",
+        userId: "",
         rating: "",
         review: "",
     });
 
     const [errors, setErrors] = useState({});
+    const [products, setProducts] = useState([]);
+    const [users, setUsers] = useState([]);
+    const navigate = useNavigate();
 
-    const products = [
-        { id: "1", name: "Apple" },
-        { id: "2", name: "Milk" },
-        { id: "3", name: "Carrot" },
-    ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [productRes, userRes] = await Promise.all([
+                    axios.get("http://localhost:8000/products"),
+                    axios.get("http://localhost:8000/users")
+                ]);
+                setProducts(productRes.data);
+                setUsers(userRes.data);
+            } catch (err) {
+                toast.error("Failed to load products or users.");
+            }
+        };
 
-    const users = [
-        { id: "101", name: "John Doe" },
-        { id: "102", name: "Jane Smith" },
-        { id: "103", name: "David Johnson" },
-    ];
+        fetchData();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -33,27 +42,22 @@ const AddReview = () => {
     };
 
     const validateField = (name, value) => {
-        let error = null;
-
-        const displayName = name.replace(/([A-Z])/g, " $1").trim();
-        const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-
         if (!value || value.trim() === "") {
-            return `${formattedName} is required.`;
+            return `${name.charAt(0).toUpperCase() + name.slice(1)} is required.`;
         }
 
         if (name === "review") {
-            if (value.length < 10) return `${formattedName} must be at least 10 characters long.`;
-            if (value.length > 500) return `${formattedName} cannot exceed 500 characters.`;
+            if (value.length < 10) return "Review must be at least 10 characters long.";
+            if (value.length > 500) return "Review cannot exceed 500 characters.";
         }
 
-        return error;
+        return null;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        let newErrors = {};
+        const newErrors = {};
         Object.keys(formData).forEach((key) => {
             newErrors[key] = validateField(key, formData[key]);
         });
@@ -61,7 +65,13 @@ const AddReview = () => {
         setErrors(newErrors);
 
         if (Object.values(newErrors).every((err) => !err)) {
-            toast.success("Review submitted successfully!");
+            try {
+                await axios.post("http://localhost:8000/reviews", formData);
+                toast.success("Review submitted successfully!");
+                navigate("/admin/reviews");
+            } catch (err) {
+                toast.error("Failed to submit review.");
+            }
         }
     };
 
@@ -73,56 +83,61 @@ const AddReview = () => {
                 <li className="breadcrumb-item"><Link to="/admin/reviews">Reviews</Link></li>
                 <li className="breadcrumb-item active">Add Review</li>
             </ol>
-            
+
             <div className="card">
                 <div className="card-body">
                     <form onSubmit={handleSubmit}>
                         <div className="mb-3">
-                            <label htmlFor="productid" className="form-label">Product</label>
-                            <select className="form-select" id="productid" name="productid" value={formData.productid} onChange={handleChange}>
+                            <label className="form-label">Product</label>
+                            <select className="form-select" name="productId" value={formData.productId} onChange={handleChange}>
                                 <option value="" disabled>Select a product</option>
                                 {products.map((product) => (
-                                    <option key={product.id} value={product.id}>
-                                        {product.id} - {product.name}
+                                    <option key={product._id} value={product._id}>
+                                        {product.productName}
                                     </option>
                                 ))}
                             </select>
-                            {errors.productid && <div id="productidError" className="error-message text-danger">{errors.productid}</div>}
+                            {errors.productId && <div className="text-danger">{errors.productId}</div>}
                         </div>
 
                         <div className="mb-3">
-                            <label htmlFor="userid" className="form-label">User</label>
-                            <select className="form-select" id="userid" name="userid" value={formData.userid} onChange={handleChange}>
+                            <label className="form-label">User</label>
+                            <select className="form-select" name="userId" value={formData.userId} onChange={handleChange}>
                                 <option value="" disabled>Select a user</option>
                                 {users.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.id} - {user.name}
+                                    <option key={user._id} value={user._id}>
+                                        {user.firstName} {user.lastName}
                                     </option>
                                 ))}
                             </select>
-                            {errors.userid && <div id="useridError" className="error-message text-danger">{errors.userid}</div>}
+                            {errors.userId && <div className="text-danger">{errors.userId}</div>}
                         </div>
 
                         <div className="mb-3">
-                            <label htmlFor="rating" className="form-label">Rating</label>
-                            <select className="form-select" id="rating" name="rating" value={formData.rating} onChange={handleChange}>
+                            <label className="form-label">Rating</label>
+                            <select className="form-select" name="rating" value={formData.rating} onChange={handleChange}>
                                 <option value="" disabled>Select a rating</option>
-                                <option value="1">1 Star</option>
-                                <option value="2">2 Stars</option>
-                                <option value="3">3 Stars</option>
-                                <option value="4">4 Stars</option>
-                                <option value="5">5 Stars</option>
+                                {[1, 2, 3, 4, 5].map((val) => (
+                                    <option key={val} value={val}>{val} Star{val > 1 ? 's' : ''}</option>
+                                ))}
                             </select>
-                            {errors.rating && <div id="ratingError" className="error-message text-danger">{errors.rating}</div>}
+                            {errors.rating && <div className="text-danger">{errors.rating}</div>}
                         </div>
 
                         <div className="mb-3">
-                            <label htmlFor="review" className="form-label">Review</label>
-                            <textarea className="form-control" id="review" name="review" rows="3" value={formData.review} onChange={handleChange} placeholder="Enter review"></textarea>
-                            {errors.review && <div id="reviewError" className="error-message text-danger">{errors.review}</div>}
+                            <label className="form-label">Review</label>
+                            <textarea
+                                className="form-control"
+                                name="review"
+                                value={formData.review}
+                                onChange={handleChange}
+                                rows="4"
+                                placeholder="Write your review"
+                            />
+                            {errors.review && <div className="text-danger">{errors.review}</div>}
                         </div>
 
-                        <input type="submit" className="btn btn-primary" value="Submit Review" />
+                        <button type="submit" className="btn btn-primary">Submit Review</button>
                     </form>
                 </div>
             </div>

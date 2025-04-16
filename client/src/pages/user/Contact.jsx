@@ -134,20 +134,21 @@ const Contact = () => {
 							<h4 className="mb-4 text-primary">Contact Information</h4>
 							
 							<div className="d-flex align-items-center mb-4">
-								<i className="fas fa-phone text-primary fs-5 me-3"></i>
-								<div>
-									<div className="text-muted small">Phone</div>
-									<div className="fw-medium">+91 87329 65892</div>
-								</div>
-							</div>
+                                <i className="fas fa-phone text-primary fs-5 me-3"></i>
+                                <div>
+                                    <div className="text-muted small">Phone</div>
+                                    <div className="fw-medium">{contactInfo.contactNumber || "Not Available"}</div>
+                                </div>
+                                </div>
 
-							<div className="d-flex align-items-center mb-4">
-								<i className="fas fa-envelope text-primary fs-5 me-3"></i>
-								<div>
-									<div className="text-muted small">Email</div>
-									<div className="fw-medium text-break">mobitrendz@gmail.com</div>
-								</div>
-							</div>
+                                <div className="d-flex align-items-center mb-4">
+                                <i className="fas fa-envelope text-primary fs-5 me-3"></i>
+                                <div>
+                                    <div className="text-muted small">Email</div>
+                                    <div className="fw-medium text-break">{contactInfo.contactEmail || "Not Available"}</div>
+                                </div>
+                                </div>
+
 
 							<div className="d-flex align-items-center">
 								<i className="fas fa-map-marker-alt text-primary fs-5 me-3"></i>

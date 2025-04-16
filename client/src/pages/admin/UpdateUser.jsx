@@ -1,18 +1,42 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const UpdateUser = () => {
+    const { id } = useParams();
     const [formData, setFormData] = useState({
-        firstName: "Jay",
-        lastName: "Barasiya",
-        email: "jaybarasiya07@gmail.com.com",
-        phone: "8141809467",
-        password: "99259925",
-        userImage: ""
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        password: "",
+        userImage: null // Can be a string (URL) or File
     });
 
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8000/users/${id}`);
+                setFormData({
+                    firstName: response.data.firstName,
+                    lastName: response.data.lastName,
+                    email: response.data.email,
+                    phone: response.data.mobile,
+                    password: response.data.password,
+                    userImage: response.data.profilePicture // string URL from backend
+                });
+            } catch (error) {
+                toast.error("Failed to load user data.");
+            }
+        };
+
+        fetchUserData();
+    }, [id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -22,7 +46,7 @@ const UpdateUser = () => {
 
     const validateField = (name, value) => {
         if (!value.trim()) return `${name} is required.`;
-        
+
         switch (name) {
             case "firstName":
             case "lastName":
@@ -42,7 +66,7 @@ const UpdateUser = () => {
             default:
                 return null;
         }
-        
+
         return null;
     };
 
@@ -53,10 +77,11 @@ const UpdateUser = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
         const formErrors = {};
-        Object.keys(formData).forEach(field => {
+        Object.keys(formData).forEach((field) => {
             if (field !== "userImage") {
                 const error = validateField(field, formData[field]);
                 if (error) formErrors[field] = error;
@@ -68,7 +93,32 @@ const UpdateUser = () => {
             return;
         }
 
-        toast.success("User updated successfully!");
+        try {
+            setLoading(true);
+
+            const submission = new FormData();
+            submission.append("firstName", formData.firstName);
+            submission.append("lastName", formData.lastName);
+            submission.append("email", formData.email);
+            submission.append("mobile", formData.phone);
+            submission.append("password", formData.password);
+            if (formData.userImage && typeof formData.userImage !== "string") {
+                submission.append("profilePicture", formData.userImage);
+            }
+
+            await axios.put(`http://localhost:8000/users/${id}`, submission, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            toast.success("User updated successfully!");
+            navigate("/admin/users");
+        } catch (error) {
+            toast.error("Failed to update user.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -86,12 +136,24 @@ const UpdateUser = () => {
                         <div className="row">
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">First Name</label>
-                                <input type="text" className="form-control" name="firstName" value={formData.firstName} onChange={handleChange} />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                />
                                 {errors.firstName && <p className="text-danger">{errors.firstName}</p>}
                             </div>
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Last Name</label>
-                                <input type="text" className="form-control" name="lastName" value={formData.lastName} onChange={handleChange} />
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                />
                                 {errors.lastName && <p className="text-danger">{errors.lastName}</p>}
                             </div>
                         </div>
@@ -99,12 +161,24 @@ const UpdateUser = () => {
                         <div className="row">
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Email</label>
-                                <input type="email" className="form-control" name="email" value={formData.email} onChange={handleChange} />
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                />
                                 {errors.email && <p className="text-danger">{errors.email}</p>}
                             </div>
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Phone</label>
-                                <input type="tel" className="form-control" name="phone" value={formData.phone} onChange={handleChange} />
+                                <input
+                                    type="tel"
+                                    className="form-control"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                />
                                 {errors.phone && <p className="text-danger">{errors.phone}</p>}
                             </div>
                         </div>
@@ -112,17 +186,38 @@ const UpdateUser = () => {
                         <div className="row">
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Password</label>
-                                <input type="password" className="form-control" name="password" value={formData.password} onChange={handleChange} />
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                />
                                 {errors.password && <p className="text-danger">{errors.password}</p>}
                             </div>
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">User Image</label>
-                                <input type="file" className="form-control" onChange={handleFileChange} accept="image/*" />
-                                <img src="/img/users/default-img.png" alt="User" height="150px" width="150px" className="mt-2" />
+                                <input
+                                    type="file"
+                                    className="form-control"
+                                    onChange={handleFileChange}
+                                    accept="image/*"
+                                />
+                                {typeof formData.userImage === "string" && (
+                                    <img
+                                        src={formData.userImage}
+                                        alt="User"
+                                        height="150px"
+                                        width="150px"
+                                        className="mt-2"
+                                    />
+                                )}
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary">Update User</button>
+                        <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? "Updating..." : "Update User"}
+                        </button>
                     </form>
                 </div>
             </div>

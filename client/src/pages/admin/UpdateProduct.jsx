@@ -1,26 +1,65 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const UpdateProduct = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
-        productName: "iPhone",
-        productDiscount: "10",
-        costPrice: "100000",
-        salePrice: "120000",
-        productStock: "5",
-        productCategory: "1",
-        productDescription: "iPhone 16 128 GB: 5G Mobile Phone with Camera Control, A18 Chip and a Big Boost in Battery Life.",
+        productName: "",
+        productDiscount: "",
+        costPrice: "",
+        salePrice: "",
+        productStock: "",
+        productCategory: "",
+        productDescription: "",
         productImage: null,
     });
-    const [errors, setErrors] = useState({});
 
-    const categories = [
-        { id: "1", name: "iPhone" },
-        { id: "2", name: "Samsung" },
-        { id: "3", name: "Realme" },
-        { id: "-", name: "Oppo" },
-    ];
+    const [oldImageUrl, setOldImageUrl] = useState(null);
+    const [previewImage, setPreviewImage] = useState(null);
+    const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        const fetchProduct = async () => {
+            try {
+                const res = await axios.get(`http://localhost:8000/products/${id}`);
+                const product = res.data;
+
+                setFormData({
+                    productName: product.productName || "",
+                    productDiscount: product.discount || "",
+                    costPrice: product.costPrice || "",
+                    salePrice: product.salePrice || "",
+                    productStock: product.stock || "",
+                    productCategory: product.categoryId?._id || "",
+                    productDescription: product.description || "",
+                    productImage: null,
+                });
+
+                setOldImageUrl(product.productImage ? product.productImage : null); // If it's a filename, update this to full URL
+            } catch (error) {
+                console.error("Error loading product:", error);
+                toast.error("Failed to load product");
+            }
+        };
+
+        const fetchCategories = async () => {
+            try {
+                const res = await axios.get("http://localhost:8000/categories");
+                setCategories(res.data);
+            } catch (err) {
+                console.error("Failed to fetch categories:", err);
+            }
+        };
+
+        fetchProduct();
+        fetchCategories();
+    }, [id]);
 
     const handleChange = (e) => {
         const { name, value, type, files } = e.target;
@@ -29,42 +68,33 @@ const UpdateProduct = () => {
 
         const error = validateField(name, newValue);
         setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
+
+       
     };
 
     const validateField = (name, value) => {
         let error = null;
-        const displayName = name.replace(/([A-Z])/g, ' $1').trim();
-        const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-    
-        if (!value && (typeof value === "string" && value.trim() === "")) {
+        const formattedName = name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+        if (!value && typeof value === "string") {
             return `${formattedName} is required.`;
         }
-    
+
         if (name === "productName") {
-            if (/^\d+$/.test(value)) {
-                return "Product name cannot be a number.";
-            }
-            if (value.length < 3) {
-                return "Product name must be at least 3 characters long.";
-            }
+            if (/^\d+$/.test(value)) return "Product name cannot be a number.";
+            if (value.length < 3) return "Product name must be at least 3 characters.";
         }
 
         if (["productDiscount", "costPrice", "salePrice", "productStock"].includes(name)) {
-            if (isNaN(value) || value < 0) {
-                return `${name.replace(/([A-Z])/g, ' $1')} must be a valid non-negative number.`;
-            }
+            if (isNaN(value) || value < 0) return `${formattedName} must be a valid non-negative number.`;
         }
 
-        if (name === "productDiscount") {
-            if (value < 1 || value > 100) {
-                return "Discount must be between 1% and 100%.";
-            }
+        if (name === "productDiscount" && (value < 1 || value > 100)) {
+            return "Discount must be between 1% and 100%.";
         }
 
-        if (name === "salePrice" && formData.costPrice) {
-            if (parseFloat(value) < parseFloat(formData.costPrice)) {
-                return "Sale price cannot be less than cost price.";
-            }
+        if (name === "salePrice" && parseFloat(value) < parseFloat(formData.costPrice)) {
+            return "Sale price cannot be less than cost price.";
         }
 
         if (name === "productStock" && !Number.isInteger(Number(value))) {
@@ -74,26 +104,52 @@ const UpdateProduct = () => {
         const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
         if (name === "productImage" && value && !allowedTypes.includes(value.type)) {
             return "Only JPG, PNG, and GIF formats are allowed.";
-
         }
+
         return error;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const formErrors = {};
+        const newErrors = {};
         Object.keys(formData).forEach((field) => {
             const error = validateField(field, formData[field]);
-            if (error) formErrors[field] = error;
+            if (error) newErrors[field] = error;
         });
 
-        if (Object.keys(formErrors).length > 0) {
-            setErrors(formErrors);
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
-        setErrors({});
-        toast.success("Product updated successfully!");
+        try {
+            setIsSubmitting(true);
+            const updateData = new FormData();
+            updateData.append("productName", formData.productName);
+            updateData.append("discount", formData.productDiscount);
+            updateData.append("costPrice", formData.costPrice);
+            updateData.append("salePrice", formData.salePrice);
+            updateData.append("stock", formData.productStock);
+            updateData.append("categoryId", formData.productCategory);
+            updateData.append("description", formData.productDescription);
+            if (formData.productImage) {
+                updateData.append("productImage", formData.productImage);
+            }
+
+            await axios.put(`http://localhost:8000/products/${id}`, updateData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            toast.success("Product updated successfully!");
+            navigate("/admin/products");
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to update product");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -144,8 +200,8 @@ const UpdateProduct = () => {
                                 <label className="form-label">Category</label>
                                 <select className="form-select" name="productCategory" value={formData.productCategory} onChange={handleChange}>
                                     <option value="" disabled>Select a category</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>{category.name}</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
                                     ))}
                                 </select>
                                 {errors.productCategory && <small className="text-danger">{errors.productCategory}</small>}
@@ -162,11 +218,18 @@ const UpdateProduct = () => {
                             <label className="form-label">Product Image</label>
                             <input type="file" className="form-control" name="productImage" onChange={handleChange} />
                             {errors.productImage && <div className="text-danger">{errors.productImage}</div>}
-                            <img src="/img/items/products/66ee9001ceeaeapple.webp" alt="Product" height="150px" className="mt-2" />
+
+                            {oldImageUrl ? (
+                                <div className="mt-2">
+                                    <small>Current Image:</small><br />
+                                    <img src={oldImageUrl} alt="Current" height="150px" />
+                                </div>
+                            ) : null}
                         </div>
 
-
-                        <button type="submit" className="btn btn-primary">Update Product</button>
+                        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                            {isSubmitting ? "Updating..." : "Update Product"}
+                        </button>
                     </form>
                 </div>
             </div>

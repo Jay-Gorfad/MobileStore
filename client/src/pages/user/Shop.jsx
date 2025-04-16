@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
 import ProductList from "../../components/user/ProductList";
 
 export default function Shop() {
@@ -16,19 +15,19 @@ export default function Shop() {
   };
 
   return (
-               
     <div className="container mt-4 sitemap">
       <div className="row">
         <p className="my-5">
-                    <Link to="/" className="text-decoration-none dim link">Home /</Link>
-                    Shop
-                </p>
+          <Link to="/" className="text-decoration-none dim link">Home /</Link>
+          Shop
+        </p>
+
         {/* Filter Sidebar */}
         <div className="col-md-3 mt-3">
           <div className="filter-box p-3 border rounded shadow-sm bg-light">
             <h5 className="mb-3">Filters</h5>
 
-            {/* Customer Ratings */}
+            {/* Ratings */}
             <div className="mb-3">
               <h6>Customer Ratings</h6>
               {[4, 3, 2, 1].map((rating) => (
@@ -60,10 +59,13 @@ export default function Shop() {
                     onChange={handleChange}
                   />
                   <label className="form-check-label">
-                    {price === "lt50" ? "Less than ₹50" :
-                    price === "51to100" ? "₹51 - ₹100" :
-                    price === "101to200" ? "₹101 - ₹200" :
-                    price === "201to500" ? "₹201 - ₹500" : "More than ₹500"}
+                    {{
+                      lt50: "Less than ₹50",
+                      "51to100": "₹51 - ₹100",
+                      "101to200": "₹101 - ₹200",
+                      "201to500": "₹201 - ₹500",
+                      gt500: "More than ₹500"
+                    }[price]}
                   </label>
                 </div>
               ))}
@@ -83,15 +85,17 @@ export default function Shop() {
                     onChange={handleChange}
                   />
                   <label className="form-check-label">
-                    {discount === "lt5" ? "Less than 5%" :
-                    discount === "5to15" ? "5% - 15%" :
-                    discount === "15to25" ? "15% - 25%" : "More than 25%"}
+                    {{
+                      lt5: "Less than 5%",
+                      "5to15": "5% - 15%",
+                      "15to25": "15% - 25%",
+                      gt25: "More than 25%"
+                    }[discount]}
                   </label>
                 </div>
               ))}
             </div>
 
-            {/* Clear Filters Button */}
             <button className="btn btn-primary w-100" onClick={handleClearFilters}>
               Clear Filters
             </button>
@@ -100,7 +104,7 @@ export default function Shop() {
 
         {/* Product List */}
         <div className="col-md-9">
-          <ProductList />
+          <ProductList filters={filters} />
         </div>
       </div>
     </div>

@@ -1,46 +1,132 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const SiteSettings = () => {
-  // Static Data
-  const [aboutContent, setAboutContent] = useState("This is about page content.");
-  const [contactEmail, setContactEmail] = useState("mobitrendz@gmail.com");
-  const [contactNumber, setContactNumber] = useState("9632587412");
-  const [errors, setErrors] = useState({});
+  // State for "About Page Content"
+  const [aboutContent, setAboutContent] = useState("");
+  const [aboutErrors, setAboutErrors] = useState({});
+  
+  // State for "Contact Info"
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [contactErrors, setContactErrors] = useState({});
+  
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Validations
-  const validateField = (name, value) => {
+  const BACKEND_URL = "http://localhost:8000"; // Replace with your actual backend URL
+
+  useEffect(() => {
+    fetchAboutPage();
+    fetchContactPage();
+  }, []);
+
+  const fetchAboutPage = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/about-page`);
+      if (!response.ok) throw new Error("Failed to fetch about page");
+      const data = await response.json();
+
+      if (data && data.data.content) {
+        setAboutContent(data.data.content);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchContactPage = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/contact`);
+      if (!response.ok) throw new Error("Failed to fetch contact page");
+      const data = await response.json();
+      if (data) {
+        setContactEmail(data.contactEmail || "");
+        setContactNumber(data.contactNumber || "");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Validation for About Page Content
+  const validateAboutContent = (value) => {
     let error = "";
-    if (name === "aboutContent" && !value.trim()) {
+    if (!value.trim()) {
       error = "About page content cannot be empty!";
-    } else if (name === "contactEmail") {
+    }
+    setAboutErrors((prevErrors) => ({ ...prevErrors, aboutContent: error }));
+    return error === "";
+  };
+
+  // Validation for Contact Info
+  const validateContactInfo = (field, value) => {
+    let error = "";
+    if (field === "contactEmail") {
       if (!value.trim()) {
         error = "Email is required!";
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         error = "Invalid email format!";
       }
-    } else if (name === "contactNumber") {
+    } else if (field === "contactNumber") {
       if (!value.trim()) {
         error = "Contact number is required!";
       } else if (!/^\d{10}$/.test(value)) {
         error = "Contact number must be 10 digits!";
       }
     }
-    setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
+    setContactErrors((prevErrors) => ({ ...prevErrors, [field]: error }));
+    return error === "";
   };
 
-  const validateForm = () => {
-    validateField("aboutContent", aboutContent);
-    validateField("contactEmail", contactEmail);
-    validateField("contactNumber", contactNumber);
-    return Object.values(errors).every((err) => err === "");
-  };
-
-  const handleSubmit = (e) => {
+  const handleAboutSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      Swal.fire("Success", "Settings updated successfully!", "success");
+    if (validateAboutContent(aboutContent)) {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/about-page`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: aboutContent }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update about page content");
+        }
+        Swal.fire("Success", "About page content updated successfully!", "success");
+      } catch (error) {
+        Swal.fire("Error", error.message, "error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    const isEmailValid = validateContactInfo("contactEmail", contactEmail);
+    const isNumberValid = validateContactInfo("contactNumber", contactNumber);
+
+    if (isEmailValid && isNumberValid) {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${BACKEND_URL}/contact`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ contactEmail, contactNumber }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update contact info");
+        }
+        Swal.fire("Success", "Contact info updated successfully!", "success");
+      } catch (error) {
+        Swal.fire("Error", error.message, "error");
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -51,19 +137,20 @@ const SiteSettings = () => {
           <h1>Site Settings</h1>
           <ol className="breadcrumb mb-0">
             <li className="breadcrumb-item">
-            <Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
-  Dashboard
-</Link>
+              <Link to="/admin">Dashboard</Link>
             </li>
             <li className="breadcrumb-item active">Site Settings</li>
           </ol>
         </div>
       </div>
-      {/* About Page Section */}
+
+      {/* About Page Content Form */}
       <div className="card mb-4">
-        <div className="card-header"><h4>Update About Page Content</h4></div>
+        <div className="card-header">
+          <h4>Update About Page Content</h4>
+        </div>
         <div className="card-body">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleAboutSubmit}>
             <div className="mb-3">
               <label className="form-label">About Page Content</label>
               <textarea
@@ -72,21 +159,25 @@ const SiteSettings = () => {
                 value={aboutContent}
                 onChange={(e) => {
                   setAboutContent(e.target.value);
-                  validateField("aboutContent", e.target.value);
+                  validateAboutContent(e.target.value);
                 }}
               />
-              {errors.aboutContent && <small className="text-danger">{errors.aboutContent}</small>}
+              {aboutErrors.aboutContent && <small className="text-danger">{aboutErrors.aboutContent}</small>}
             </div>
-            <button type="submit" className="btn btn-primary">Update About Page</button>
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              {isLoading ? "Updating..." : "Update About Page"}
+            </button>
           </form>
         </div>
       </div>
 
-      {/* Contact Page Section */}
+      {/* Contact Info Form */}
       <div className="card mb-4">
-        <div className="card-header"><h4>Update Contact Page Info</h4></div>
+        <div className="card-header">
+          <h4>Update Contact Page Info</h4>
+        </div>
         <div className="card-body">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleContactSubmit}>
             <div className="row">
               <div className="col-md-6 mb-3">
                 <label className="form-label">Contact Email</label>
@@ -96,10 +187,10 @@ const SiteSettings = () => {
                   value={contactEmail}
                   onChange={(e) => {
                     setContactEmail(e.target.value);
-                    validateField("contactEmail", e.target.value);
+                    validateContactInfo("contactEmail", e.target.value);
                   }}
                 />
-                {errors.contactEmail && <small className="text-danger">{errors.contactEmail}</small>}
+                {contactErrors.contactEmail && <small className="text-danger">{contactErrors.contactEmail}</small>}
               </div>
               <div className="col-md-6 mb-3">
                 <label className="form-label">Contact Number</label>
@@ -109,13 +200,15 @@ const SiteSettings = () => {
                   value={contactNumber}
                   onChange={(e) => {
                     setContactNumber(e.target.value);
-                    validateField("contactNumber", e.target.value);
+                    validateContactInfo("contactNumber", e.target.value);
                   }}
                 />
-                {errors.contactNumber && <small className="text-danger">{errors.contactNumber}</small>}
+                {contactErrors.contactNumber && <small className="text-danger">{contactErrors.contactNumber}</small>}
               </div>
             </div>
-            <button type="submit" className="btn btn-primary">Update Contact Info</button>
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              {isLoading ? "Updating..." : "Update Contact Info"}
+            </button>
           </form>
         </div>
       </div>

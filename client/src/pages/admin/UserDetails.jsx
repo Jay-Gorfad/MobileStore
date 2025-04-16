@@ -4,10 +4,10 @@ import Swal from "sweetalert2";
 
 const UserDetails = () => {
   const user = {
-    First_Name: "Jay",
-    Last_Name: "Barasiya",
-    Email: "jaybarasiya07@gmail.com",
-    Mobile_No: "8141809467",
+    First_Name: "John",
+    Last_Name: "Doe",
+    Email: "john.doe@example.com",
+    Mobile_No: "1234567890",
     Active_Status: 1,
   };
 

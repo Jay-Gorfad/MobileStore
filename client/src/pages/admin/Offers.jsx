@@ -1,153 +1,178 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import axios from "axios";
+import DataTable from "react-data-table-component";
 
 const Offers = () => {
-	const [offers, setOffers] = useState([
-		{
-			Offer_Id: 1,
-			Offer_Code: "DISCOUNT10",
-			Offer_Description: "Get 10% off on orders above ₹500",
-			Discount: 10,
-			Minimum_Order: 500,
-			active_status: 1,
-		},
-		{
-			Offer_Id: 2,
-			Offer_Code: "SAVE20",
-			Offer_Description: "Save ₹20 on orders above ₹300",
-			Discount: 20,
-			Minimum_Order: 300,
-			active_status: 0,
-		},
-	]);
+  const [offers, setOffers] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-	const handleDelete = () => {
-		Swal.fire({
-			title: "Are you sure?",
-			text: "You won't be able to revert this!",
-			icon: "warning",
-			showCancelButton: true,
-			confirmButtonColor: "#d33",
-			cancelButtonColor: "#3085d6",
-			confirmButtonText: "Yes, delete it!",
-		}).then((result) => {
-			if (result.isConfirmed) {
-				Swal.fire("Deleted!", "Offer has been deleted.", "success");
-			}
-		});
-	};
+  const fetchOffers = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get("http://localhost:8000/offers");
+      setOffers(response.data);
+    } catch (error) {
+      console.error("Error fetching offers:", error);
+      Swal.fire("Error", "Failed to load offers", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const handleToggleStatus = (offerId) => {
-		setOffers(
-			offers.map((offer) =>
-				offer.Offer_Id === offerId
-					? {
-							...offer,
-							active_status: offer.active_status === 1 ? 0 : 1,
-					  }
-					: offer
-			)
-		);
-		Swal.fire(
-			"Success!",
-			`Offer has been ${
-				offers.find((offer) => offer.Offer_Id === offerId)
-					.active_status === 1
-					? "deactivated"
-					: "activated"
-			}.`,
-			"success"
-		);
-	};
+  useEffect(() => {
+    fetchOffers();
+  }, []);
 
-	return (
-		<div>
-			<div className="d-flex justify-content-between align-items-center">
-				<div>
-					<h1 className="mt-4">Offers Management</h1>
-					<ol class="breadcrumb mb-4">
-						<li class="breadcrumb-item">
-						<Link to="/admin" style={{ color: "blue", textDecoration: "none" }}>
-  Dashboard
-</Link>
-						</li>
-						<li class="breadcrumb-item active">Offers</li>
-					</ol>
-				</div>
-				<Link to="/admin/add-offer" className="btn btn-primary">
-					Add Offer
-				</Link>
-			</div>
+  const handleDelete = async (id) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won’t be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(`http://localhost:8000/offers/${id}`);
+          Swal.fire("Deleted!", "Offer has been deleted.", "success");
+          fetchOffers(); // refresh the data
+        } catch (err) {
+          console.error(err);
+          Swal.fire("Error", "Failed to delete offer", "error");
+        }
+      }
+    });
+  };
 
-			<h4 className="mt-2">Discount Offers</h4>
-			<div className="card-body">
-				<table className="table border text-nowrap">
-					<thead className="table-light">
-						<tr>
-							<th>Offer Description</th>
-							<th>Offer Code</th>
-							<th>Discount</th>
-							<th>Minimum Order</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						{offers.length > 0 ? (
-							offers.map((offer) => (
-								<tr key={offer.Offer_Id}>
-									<td>{offer.Offer_Description}</td>
-									<td>{offer.Offer_Code}</td>
-									<td>{offer.Discount}%</td>
-									<td>₹{offer.Minimum_Order}</td>
-									<td>
-										<div className="d-flex">
-											<Link
-												to="/admin/update-offer"
-												className="btn btn-secondary btn-sm me-1"
-											>
-												Update
-											</Link>
-											<button
-												className="btn btn-danger btn-sm me-1"
-												onClick={() =>
-													handleDelete(offer.Offer_Id)
-												}
-											>
-												Delete
-											</button>
-											<button
-												className={
-													offer.active_status === 1
-														? "btn btn-warning btn-sm"
-														: "btn btn-success btn-sm"
-												}
-												onClick={() =>
-													handleToggleStatus(
-														offer.Offer_Id
-													)
-												}
-											>
-												{offer.active_status === 1
-													? "Deactivate"
-													: "Activate"}
-											</button>
-										</div>
-									</td>
-								</tr>
-							))
-						) : (
-							<tr>
-								<td colSpan="5" className="text-center">
-									No offers available
-								</td>
-							</tr>
-						)}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	);
+  const filteredOffers = offers.filter((offer) =>
+    Object.values(offer)
+      .join(" ")
+      .toLowerCase()
+      .includes(searchText.toLowerCase())
+  );
+
+  const columns = [
+    {
+      name: "Offer Description",
+      selector: (row) => row.offerDescription,
+      sortable: true,
+      wrap: true,
+    },
+    {
+      name: "Offer Code",
+      selector: (row) => row.offerCode,
+      sortable: true,
+    },
+    {
+      name: "Discount",
+      selector: (row) => `${row.discount}%`,
+    },
+    {
+      name: "Minimum Order",
+      selector: (row) => `₹${parseFloat(row.minimumOrder).toFixed(2)}`,
+    },
+    {
+      name: "Status",
+      selector: (row) => {
+        const now = new Date();
+        const start = new Date(row.startDate);
+        const end = new Date(row.endDate);
+        return now >= start && now <= end ? "Active" : "Expired";
+      },
+      cell: (row) => {
+        const now = new Date();
+        const start = new Date(row.startDate);
+        const end = new Date(row.endDate);
+        const active = now >= start && now <= end;
+        return (
+          <span
+            className={`badge ${active ? "bg-success" : "bg-danger"}`}
+          >
+            {active ? "Active" : "Expired"}
+          </span>
+        );
+      },
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <div className="d-flex flex-nowrap">
+          <Link
+            to={`/admin/update-offer/${row._id}`}
+            className="btn btn-secondary btn-sm me-2"
+          >
+            Edit
+          </Link>
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={() => handleDelete(row._id)}
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <div className="d-flex justify-content-between align-items-center mt-4 mb-3">
+        <div>
+          <h1>Offers Management</h1>
+          <ol className="breadcrumb mb-0">
+            <li className="breadcrumb-item">
+              <Link to="/admin">Dashboard</Link>
+            </li>
+            <li className="breadcrumb-item active">Offers</li>
+          </ol>
+        </div>
+        <Link to="/admin/add-offer" className="btn btn-primary">
+          Add Offer
+        </Link>
+      </div>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search offers..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+      </div>
+
+      <div className="card-body">
+        <DataTable
+          columns={columns}
+          data={filteredOffers}
+          pagination
+          highlightOnHover
+          responsive
+          progressPending={loading}
+          noDataComponent="No offers found"
+          customStyles={{
+            headCells: {
+              style: {
+                fontSize: "16px",
+                fontWeight: "bold",
+              },
+            },
+            cells: {
+              style: {
+                fontSize: "14px",
+              },
+            },
+          }}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default Offers;

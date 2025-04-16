@@ -154,3 +154,31 @@ exports.getOrderById = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+exports.hasUserPurchasedProduct = async (req, res) => {
+    const { userId, productId } = req.params;
+  
+    try {
+      // Step 1: Find all non-deleted orders by the user
+      const userOrders = await Order.find({ userId, isDeleted: false }).select("_id");
+  
+      const orderIds = userOrders.map(order => order._id);
+  
+      if (orderIds.length === 0) {
+        return res.status(200).json({ purchased: false });
+      }
+  
+      // Step 2: Check if any order items match the productId and belong to those orders
+      const orderItem = await OrderItem.findOne({
+        orderId: { $in: orderIds },
+        productId: productId,
+      });
+  
+      const hasPurchased = !!orderItem;
+  
+      res.status(200).json({ purchased: hasPurchased });
+    } catch (error) {
+      console.error("Error checking product purchase:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  

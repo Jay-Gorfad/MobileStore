@@ -1,22 +1,55 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const UpdateBanner = () => {
-	const [formData, setFormData] = useState({
-		bannerImage: null, // Static image won't be stored
-		bannerOrder: "2",
-		bannerStatus: "1",
-	});
+	const { id } = useParams();
 
+	const [formData, setFormData] = useState({
+		bannerImage: null,
+		bannerOrder: "",
+		bannerStatus: "",
+	});
+	const [previewImage, setPreviewImage] = useState("");
 	const [errors, setErrors] = useState({});
+	const [loading, setLoading] = useState(false);
+
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		const fetchBanner = async () => {
+			try {
+				const res = await axios.get(
+					`http://localhost:8000/banners/${id}`
+				);
+				const banner = res.data;
+
+				setFormData({
+					bannerImage: null,
+					bannerOrder: banner.viewOrder.toString(),
+					bannerStatus: banner.activeStatus ? "1" : "0",
+				});
+				setPreviewImage(banner.bannerImage);
+			} catch (err) {
+				toast.error("Failed to load banner details.");
+				console.error(err);
+			}
+		};
+
+		fetchBanner();
+	}, [id]);
 
 	const handleChange = (e) => {
 		const { name, value, type, files } = e.target;
 		const newValue = type === "file" ? files[0] : value;
-		setFormData({ ...formData, [name]: newValue });
 
-		// Validate field
+		// if (name === "bannerImage" && files[0]) {
+		// 	setPreviewImage(URL.createObjectURL(files[0]));
+		// }
+
+		setFormData((prev) => ({ ...prev, [name]: newValue }));
 		const error = validateField(name, newValue);
 		setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
 	};
@@ -31,7 +64,6 @@ const UpdateBanner = () => {
 				error = "Only JPG, JPEG, and PNG images are allowed.";
 			}
 		}
-
 		if (name === "bannerOrder") {
 			if (!value.trim()) {
 				error = "View order is required.";
@@ -39,16 +71,15 @@ const UpdateBanner = () => {
 				error = "View order must be a positive number.";
 			}
 		}
-
 		if (name === "bannerStatus" && value === "") {
 			error = "Status is required.";
 		}
-
 		return error;
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
+		setLoading(true); // Start loading
 
 		const formErrors = {};
 		Object.keys(formData).forEach((field) => {
@@ -56,13 +87,29 @@ const UpdateBanner = () => {
 			if (error) formErrors[field] = error;
 		});
 
-		if (Object.values(formErrors).some((error) => error)) {
+		if (Object.values(formErrors).some(Boolean)) {
 			setErrors(formErrors);
+			setLoading(false); // Stop loading if errors found
 			return;
 		}
 
-		setErrors({});
-		toast.success("Banner updated successfully!");
+		try {
+			const data = new FormData();
+			data.append("viewOrder", formData.bannerOrder);
+			data.append("activeStatus", formData.bannerStatus === "1");
+			if (formData.bannerImage) {
+				data.append("bannerImage", formData.bannerImage);
+			}
+
+			await axios.put(`http://localhost:8000/banners/${id}`, data);
+			toast.success("Banner updated successfully!");
+			navigate("/admin/banners");
+		} catch (err) {
+			console.error(err);
+			toast.error("Failed to update banner.");
+		} finally {
+			setLoading(false); // Stop loading regardless of result
+		}
 	};
 
 	return (
@@ -72,7 +119,7 @@ const UpdateBanner = () => {
 				<li className="breadcrumb-item">
 					<Link to="/admin">Dashboard</Link>
 				</li>
-                <li className="breadcrumb-item">
+				<li className="breadcrumb-item">
 					<Link to="/admin/banners">Banners</Link>
 				</li>
 				<li className="breadcrumb-item active">Update Banner</li>
@@ -144,11 +191,13 @@ const UpdateBanner = () => {
 								accept="image/png, image/jpeg, image/jpg"
 								onChange={handleChange}
 							/>
-							<img
-								src="/img/banners/670ea91823ea4banner-1.png"
-								alt="banner image"
-								className="w-25 mt-2"
-							/>
+							{previewImage && (
+								<img
+									src={previewImage}
+									alt="Preview"
+									className="w-25 mt-2"
+								/>
+							)}
 							{errors.bannerImage && (
 								<p className="text-danger">
 									{errors.bannerImage}
@@ -156,8 +205,12 @@ const UpdateBanner = () => {
 							)}
 						</div>
 
-						<button type="submit" className="btn btn-primary">
-							Update Banner
+						<button
+							type="submit"
+							className="btn btn-primary"
+							disabled={loading}
+						>
+							{loading ? "Updating..." : "Update Banner"}
 						</button>
 					</form>
 				</div>

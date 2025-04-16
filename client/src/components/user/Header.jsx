@@ -103,7 +103,7 @@ const Header = () => {
 										aria-expanded="false"
 									>
 										<img
-											src="../img/users/default-img.png"
+											src={`${user?.profilePicture??'../img/users/default-img.png'}`}
 											alt="User"
 											style={{
 												width: "35px",

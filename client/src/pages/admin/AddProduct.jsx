@@ -1,8 +1,10 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const AddProduct = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         productName: "",
         productDiscount: "",
@@ -15,13 +17,22 @@ const AddProduct = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const categories = [
-        { id: "1", name: "iPhone" },
-        { id: "2", name: "Samsung" },
-        { id: "3", name: "Realme" },
-        { id: "-", name: "Oppo" },
-    ];
+
+    useEffect(() => {
+        // Fetch categories from backend
+        const fetchCategories = async () => {
+            try {
+                const res = await axios.get("http://localhost:8000/categories");
+                setCategories(res.data);
+            } catch (err) {
+                toast.error("Failed to load categories.");
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value, type, files } = e.target;
@@ -34,32 +45,23 @@ const AddProduct = () => {
 
     const validateField = (name, value) => {
         let error = null;
-        const displayName = name.replace(/([A-Z])/g, ' $1').trim();
-        const formattedName = displayName.charAt(0).toUpperCase() + displayName.slice(1);
-    
+        const label = name.replace(/([A-Z])/g, ' $1').trim();
+
         if (!value || (typeof value === "string" && value.trim() === "")) {
-            return `${formattedName} is required.`;
+            return `${label} is required.`;
         }
-    
+
         if (name === "productName") {
-            if (/^\d+$/.test(value)) {
-                return "Product name cannot be a number.";
-            }
-            if (value.length < 3) {
-                return "Product name must be at least 3 characters long.";
-            }
+            if (/^\d+$/.test(value)) return "Product name cannot be a number.";
+            if (value.length < 3) return "Product name must be at least 3 characters.";
         }
 
         if (["productDiscount", "costPrice", "salePrice", "productStock"].includes(name)) {
-            if (isNaN(value) || value < 0) {
-                return `${name.replace(/([A-Z])/g, ' $1')} must be a valid non-negative number.`;
-            }
+            if (isNaN(value) || value < 0) return `${label} must be a valid non-negative number.`;
         }
 
-        if (name === "productDiscount") {
-            if (value < 1 || value > 100) {
-                return "Discount must be between 1% and 100%.";
-            }
+        if (name === "productDiscount" && (value < 1 || value > 100)) {
+            return "Discount must be between 1% and 100%.";
         }
 
         if (name === "salePrice" && formData.costPrice) {
@@ -73,9 +75,6 @@ const AddProduct = () => {
         }
 
         if (name === "productImage") {
-            if (!value) {
-                return "Product image is required.";
-            }
             const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
             if (!allowedTypes.includes(value.type)) {
                 return "Only JPG, PNG, and GIF formats are allowed.";
@@ -85,8 +84,7 @@ const AddProduct = () => {
         return error;
     };
 
- 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const formErrors = {};
         Object.keys(formData).forEach((field) => {
@@ -98,9 +96,28 @@ const AddProduct = () => {
             setErrors(formErrors);
             return;
         }
+        setLoading(true);
+        try {
+            const data = new FormData();
+            data.append("productName", formData.productName);
+            data.append("description", formData.productDescription);
+            data.append("discount", formData.productDiscount);
+            data.append("costPrice", formData.costPrice);
+            data.append("salePrice", formData.salePrice);
+            data.append("stock", formData.productStock);
+            data.append("categoryId", formData.productCategory);
+            data.append("productImage", formData.productImage);
 
-        setErrors({});
-        toast.success("Product added successfully!");
+            await axios.post("http://localhost:8000/products", data, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            toast.success("Product added successfully!");
+            navigate("/admin/products");
+        } catch (err) {
+            console.error("Product submit error:", err);
+            toast.error("Failed to add product.");
+        }
     };
 
     return (
@@ -115,6 +132,7 @@ const AddProduct = () => {
             <div className="card mb-4">
                 <div className="card-body">
                     <form onSubmit={handleSubmit}>
+                        {/* Form inputs here */}
                         <div className="row">
                             <div className="col-md-6 mb-3">
                                 <label className="form-label">Product Name</label>
@@ -151,8 +169,8 @@ const AddProduct = () => {
                                 <label className="form-label">Category</label>
                                 <select className="form-select" name="productCategory" value={formData.productCategory} onChange={handleChange}>
                                     <option value="" disabled>Select a category</option>
-                                    {categories.map((category) => (
-                                        <option key={category.id} value={category.id}>{category.name}</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat._id} value={cat._id}>{cat.name}</option>
                                     ))}
                                 </select>
                                 {errors.productCategory && <p className="text-danger">{errors.productCategory}</p>}
@@ -170,8 +188,17 @@ const AddProduct = () => {
                             <input type="file" className="form-control" name="productImage" onChange={handleChange} />
                             {errors.productImage && <p className="text-danger">{errors.productImage}</p>}
                         </div>
-                        
-                        <button type="submit" className="btn btn-primary">Add Product</button>
+
+                        <button type="submit" className="btn btn-primary" disabled={loading?"true":""}>
+                        {loading ? (
+                                <>
+                                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    Adding...
+                                </>
+                            ) : (
+                                "Add Product"
+                            )}
+                        </button>
                     </form>
                 </div>
             </div>
