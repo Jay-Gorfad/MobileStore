@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -41,7 +42,7 @@ const Register = () => {
         return error;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         const formErrors = {};
@@ -56,7 +57,32 @@ const Register = () => {
         }
 
         setErrors({});
-        alert("Account created successfully!");
+        try {
+            const payload = {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                mobile: formData.phone,
+                password: formData.password,
+                authType: "Email"
+            };
+
+            const response = await axios.post("http://localhost:8000/users/register", payload);
+            alert("Account created successfully!");
+            
+        }
+        catch (error) {
+            if (error.response) {
+                // Server responded with a status code outside the 2xx range
+                alert(`Registration failed: ${error.response.data.message || "Please try again."}`);
+            } else if (error.request) {
+                // No response was received
+                alert("No response from server. Please check your network or server.");
+            } else {
+                // Something else went wrong
+                alert("An error occurred. Please try again.");
+            }   
+        }
     };
 
     return (

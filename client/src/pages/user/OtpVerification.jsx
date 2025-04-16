@@ -10,6 +10,7 @@ const OtpVerification = () => {
     useEffect(() => {
         // Get email from sessionStorage
         const resetEmail = sessionStorage.getItem('resetEmail');
+        console.log(resetEmail)
         if (!resetEmail) {
             // If no email found, redirect to forgot password
             navigate('/forgot-password');

@@ -1,267 +1,164 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext"; 
 
-const Header = ({}) => {
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
+const Header = () => {
+	const { isLoggedIn, logout, user } = useAuth(); // ✅ Grab user from context
 	const [query, setQuery] = useState("");
-    const navigate = useNavigate();
+	const [isNavCollapsed, setIsNavCollapsed] = useState(true);
+	const navigate = useNavigate();
 
-	const validateSearch = (event) => {
-		event.preventDefault();
-		console.log("Search Query:", query);
+	useEffect(() => {
+		const navbarToggler = document.querySelector(".navbar-toggler");
+		const navbarCollapse = document.querySelector(".navbar-collapse");
+
+		if (navbarToggler && navbarCollapse) {
+			const toggleCollapse = () => setIsNavCollapsed(!isNavCollapsed);
+
+			const handleClickOutside = (event) => {
+				if (
+					!navbarToggler.contains(event.target) &&
+					!navbarCollapse.contains(event.target) &&
+					!isNavCollapsed
+				) {
+					setIsNavCollapsed(true);
+				}
+			};
+
+			navbarToggler.addEventListener("click", toggleCollapse);
+			document.addEventListener("click", handleClickOutside);
+
+			return () => {
+				navbarToggler.removeEventListener("click", toggleCollapse);
+				document.removeEventListener("click", handleClickOutside);
+			};
+		}
+	}, [isNavCollapsed]);
+
+	const validateSearch = (e) => {
+		e.preventDefault();
+		navigate("/shop");
 	};
-	const handleDoubleClick = () => {
-		setIsLoggedIn((prev) => !prev);
+
+	const handleLogout = () => {
+		logout(); // ✅ Logout from context
+		//toast.success("You have been logged out successfully!");
+		alert("You have been logged out successfully!");
+		navigate("/");
 	};
-    const handleLogout = ()=>{
-        alert("You are logged out successfully!");
-        navigate("/");
-    }
-    
+
 	return (
-		<>
-			{isLoggedIn ? (
-				<nav
-					id="navibar"
-					className="navbar navbar-expand-lg navbar-light sticky-top container-fluid"
-                    onDoubleClick={handleDoubleClick}
-                    style={{backgroundColor:"#f8f9fa"}}
+		<nav id="navibar" className="navbar navbar-expand-lg navbar-light sticky-top container-fluid">
+			<div className="container-fluid">
+				<Link className="logo navbar-brand fs-1 fw-bold" to="/">MobiTrendz</Link>
+				<button
+					className="navbar-toggler"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#navbarContent"
+					aria-controls="navbarContent"
+					aria-expanded={!isNavCollapsed}
+					aria-label="Toggle navigation"
 				>
-					<div className="container-fluid">
-						<button
-							id="collapse-btn"
-							className="navbar-toggler"
-							type="button"
-							data-bs-toggle="collapse"
-							data-bs-target="#navbarTogglerDemo01"
-							aria-controls="navbarTogglerDemo01"
-							aria-expanded="false"
-							aria-label="Toggle navigation"
-						>
-							<span className="navbar-toggler-icon"></span>
-						</button>
-						<div
-							className="collapse navbar-collapse"
-							id="navbarTogglerDemo01"
-						>
-							<Link
-								className="logo navbar-brand fs-1 fw-bold"
-								to="/"
-                                style={{color:"black"}}
-							>
-								MobiTrendz
-							</Link>
-							<ul className="links navbar-nav me-auto mb-2 mb-lg-0">
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/">
-										Home
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/shop">
-										Shop
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/contact">
-										Contact
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/about">
-										About
-									</NavLink>
-								</li>
-							</ul>
+					<span className="navbar-toggler-icon"></span>
+				</button>
+				<div className={`collapse navbar-collapse text-center ${!isNavCollapsed ? "show" : ""}`} id="navbarContent">
+					<ul className="navbar-nav me-auto mb-2 mb-lg-0 w-100 justify-content-center">
+						<li className="nav-item">
+							<NavLink className="nav-link" to="/">Home</NavLink>
+						</li>
+						<li className="nav-item">
+							<NavLink className="nav-link" to="/shop">Shop</NavLink>
+						</li>
+						<li className="nav-item">
+							<NavLink className="nav-link" to="/contact">Contact</NavLink>
+						</li>
+						<li className="nav-item">
+							<NavLink className="nav-link" to="/about">About</NavLink>
+						</li>
+					</ul>
 
-							<div className="d-flex justify-content-end align-items-center flex-sm-row flex-column">
-								<div
-									className="d-flex justify-content-end align-items-center not-hidden"
-									id="SearchSection2"
-								>
-									<form
-										className="d-flex justify-content-end"
-										onSubmit={validateSearch}
+					<div className="d-flex flex-lg-row flex-column align-items-center w-100 mt-3 mt-lg-0">
+						<form className="d-flex mb-3 mb-lg-0 me-lg-3 justify-content-center" onSubmit={validateSearch}>
+							<input
+								className="search-input flex-sm-grow-0 flex-grow-1"
+								type="search"
+								placeholder="Search for items..."
+								value={query}
+								onChange={(e) => setQuery(e.target.value)}
+							/>
+							<button className="primary-btn search-button">
+								<i className="fa fa-search" aria-hidden="true"></i>
+							</button>
+						</form>
+
+						{isLoggedIn ? (
+							<div className="d-flex align-items-center justify-content-center mt-3 mt-lg-0">
+								<div className="dropdown profile-menu me-3">
+									<a
+										className="nav-link dropdown-toggle d-flex align-items-center justify-content-center"
+										href="#"
+										role="button"
+										data-bs-toggle="dropdown"
+										aria-expanded="false"
 									>
-										<input
-											className="search-input"
-											type="search"
-											placeholder="Search for items..."
-											size="25"
-											id="searchBar"
-											name="search"
-											value={query}
-											onChange={(e) =>
-												setQuery(e.target.value)
-											}
+										<img
+											src="../img/users/default-img.png"
+											alt="User"
+											style={{
+												width: "35px",
+												height: "35px",
+												borderRadius: "50%",
+												marginRight: "8px",
+											}}
 										/>
-										<button className="primary-btn me-3 search-button">
-											<i
-												className="fa fa-search"
-												aria-hidden="true"
-											></i>
-										</button>
-									</form>
+										{user?.firstName || "User"} {/* ✅ Show dynamic user name */}
+									</a>
+									<ul className="dropdown-menu dropdown-menu-end">
+										<li>
+											<NavLink className="dropdown-item" to="/account">My Profile</NavLink>
+										</li>
+										<li>
+											<NavLink className="dropdown-item" to="/order-history">Your Orders</NavLink>
+										</li>
+										<li>
+											<button className="dropdown-item" onClick={handleLogout}>Log out</button>
+										</li>
+									</ul>
 								</div>
 
-								<div className="d-flex justify-content-between align-items-center justify-content-sm-between w-100">
-									<li className="nav-item dropdown profile-menu ms-lg-auto"  >
-										<a
-											className="nav-link dropdown-toggle"
-											id="navbarLightDropdownMenuLink"
-											role="button"
-											data-bs-toggle="dropdown"
-											aria-expanded="false"
-                                            style={{backgroundColor:"#f8f9fa"}}
-										>
-											<img
-												src="img/users/default-img.png"
-												alt="User"
-												style={{
-													width: "45px",
-													height: "45px",
-													borderRadius: "50%",
-													marginRight: "10px",
-												}}
-											/>
-											Jay Gorfad
-										</a>
-
-										<ul
-											id="pro-drop"
-											className="dropdown-menu dropdown-menu-dark"
-										>
-											<li>
-												<NavLink
-													className="dropdown-item nav-link"
-													to="/account"
-												>
-													My Profile
-												</NavLink>
-											</li>
-											<li>
-												<NavLink
-													className="dropdown-item nav-link"
-													to="/order-history"
-												>
-													Your Orders
-												</NavLink>
-											</li>
-											<li>
-												<button
-													className="dropdown-item nav-link"
-													onClick={handleLogout}
-												>
-													Log out
-												</button>
-											</li>
-										</ul>
-									</li>
-
-									<div className="d-flex justify-content-end align-items-center justify-content-sm-center w-100">
-										<Link
-											to="/wishlist"
-											className="icon-link"
-										>
-											<div className="icon me-1">
-												<i className="fa-solid fa-heart primary"></i>
-												<span className="badge-class bg-danger">
-													2
-												</span>
-											</div>
-										</Link>
-										<Link to="/cart" className="icon-link">
-											<div className="icon me-1">
-												<i className="fa-solid fa-cart-shopping primary"></i>
-												<span className="badge-class bg-danger">
-													3
-												</span>
-											</div>
-										</Link>
-									</div>
-								</div>
+								<div className="d-flex justify-content-end align-items-center justify-content-sm-center w-100">
+	 									<Link
+	 										to="/wishlist"
+	 										className="icon-link"
+	 									>
+	 										<div className="icon me-1">
+	 											<i className="fa-solid fa-heart primary"></i>
+	 											<span className="badge-class bg-danger">
+	 												2
+	 											</span>
+	 										</div>
+	 									</Link>
+	 									<Link to="/cart" className="icon-link">
+	 										<div className="icon me-1">
+	 											<i className="fa-solid fa-cart-shopping primary"></i>
+	 											<span className="badge-class bg-danger">
+	 												3
+	 											</span>
+	 										</div>
+	 									</Link>
+	 	 	 								</div>
 							</div>
-						</div>
+						) : (
+							<div className="d-flex">
+								<Link className="header-btn me-2" to="/register">Register</Link>
+								<Link className="header-btn" to="/login">Login</Link>
+							</div>
+						)}
 					</div>
-				</nav>
-			) : (
-				<nav
-					id="navibar"
-					className="navbar navbar-expand-lg navbar-light sticky-top container-fluid"
-                    onDoubleClick={handleDoubleClick}
-                    style={{backgroundColor:"#f8f9fa"}}
-				>
-					<div className="container">
-						<button
-							className="navbar-toggler"
-							type="button"
-							data-bs-toggle="collapse"
-							data-bs-target="#navbarTogglerDemo01"
-							aria-controls="navbarTogglerDemo01"
-							aria-expanded="false"
-							aria-label="Toggle navigation"
-						>
-							<span className="navbar-toggler-icon"></span>
-						</button>
-						<div
-							className="collapse navbar-collapse justify-content-between"
-							id="navbarTogglerDemo01"
-						>
-							<Link
-								className="logo navbar-brand fs-1 fw-bold"
-								to="/"
-                                style={{color:"black"}}
-							>
-								MobiTrendz
-							</Link>
-							<ul className="links navbar-nav mb-2 mb-lg-0 me-auto">
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/">
-										Home
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/shop">
-										Shop
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/contact">
-										Contact
-									</NavLink>
-								</li>
-								<li className="nav-item">
-									<NavLink className="nav-link" to="/about">
-										About
-									</NavLink>
-								</li>
-							</ul>
-
-							<form className="d-flex flex-nowrap justify-content-end">
-								<input
-									className="search-input"
-									type="search"
-									placeholder="Search for items..."
-									size="25"
-								/>
-								<button className="primary-btn me-3 search-button">
-									<i
-										className="fa fa-search"
-										aria-hidden="true"
-									></i>
-								</button>
-								<Link className="header-btn" to="/register">
-									Register
-								</Link>
-								<Link className="header-btn" to="/login">
-									Login
-								</Link>
-							</form>
-						</div>
-					</div>
-				</nav>
-			)}
-		</>
+				</div>
+			</div>
+		</nav>
 	);
 };
 

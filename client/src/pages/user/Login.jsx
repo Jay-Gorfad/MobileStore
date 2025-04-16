@@ -1,13 +1,24 @@
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Login = () => {
+    const auth = useAuth();
+    console.log("auth context:", auth);
+    // Optional: try accessing login directly to test
+    console.log("login method:", auth?.login);
+
+    const navigate = useNavigate();
+    const { login: loginUser } = useAuth();
+
     const [formData, setFormData] = useState({
         email: "",
         password: ""
     });
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,7 +41,7 @@ const Login = () => {
         return error;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         const formErrors = {};
@@ -44,8 +55,28 @@ const Login = () => {
             return;
         }
 
-        setErrors({});
-        alert("Login successful!");
+        try {
+            setLoading(true);
+            const res = await axios.post("http://localhost:8000/users/login", formData);
+
+            //alert("Login successful!");
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+
+            loginUser(res.data.token, res.data.user); // ✅ Update context state
+            navigate("/");
+        } catch (error) {
+            console.error("Login error:", error); // Add this
+            const message = error.response?.data?.message || "Login failed";
+           alert(message);
+        }
+        
+        finally {
+            setLoading(false);
+        }
+
+        // setErrors({});
+        // alert("Login successful!");
     };
 
     return (
@@ -90,9 +121,7 @@ const Login = () => {
                                 <div className="mb-4">
                                     <div className="d-flex justify-content-between align-items-center">
                                         <label htmlFor="password" className="form-label small fw-medium">Password</label>
-                                        <Link to="/forgot-password" className="text-decoration-none small">
-                                            Forgot password?
-                                        </Link>
+                                       
                                     </div>
                                     <div className="input-group">
                                         <span className="input-group-text bg-white border-end-0">
@@ -109,11 +138,16 @@ const Login = () => {
                                         />
                                         {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                                     </div>
+                                    <div className="d-flex justify-content-end align-items-center mt-2">
+                                        <Link to="/forgot-password" className="text-decoration-none small">
+                                                Forgot password?
+                                            </Link>
+                                        </div>
                                 </div>
 
                                 <button 
                                     type="submit" 
-                                    className="btn btn-primary w-100 py-3 mb-4 fw-medium"
+                                    className="btn btn-primary w-100 py-3 mb-3 fw-medium"
                                 >
                                     Sign In
                                 </button>

@@ -1,65 +1,77 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const ResetPassword = () => {
     const [formData, setFormData] = useState({
-        password: "",
+        newPassword: "",
         confirmPassword: ""
     });
     const [errors, setErrors] = useState({});
+    const [email, setEmail] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if user came from OTP verification
-        const resetEmail = sessionStorage.getItem('resetEmail');
-        if (!resetEmail) {
-            // If no email found, redirect to forgot password
-            navigate('/forgot-password');
+        const storedEmail = sessionStorage.getItem("resetEmail");
+        if (!storedEmail) {
+            toast.error("Email not found. Please request a password reset.");
+            navigate("/forgot-password");
+        } else {
+            setEmail(storedEmail);
         }
     }, [navigate]);
 
-    const validateField = (name, value) => {
-        if (!value.trim()) return `${name === 'password' ? 'Password' : 'Confirm password'} is required`;
-        if (name === 'password' && value.length < 6) return "Password must be at least 6 characters";
-        if (name === 'confirmPassword' && value !== formData.password) return "Passwords do not match";
-        return "";
-    };
-
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        
-        // Validate current field
-        const error = validateField(name, value);
-        setErrors(prev => ({ ...prev, [name]: error }));
+        setFormData({ ...formData, [name]: value });
 
-        // Validate confirm password when password changes
-        if (name === 'password' && formData.confirmPassword) {
-            const confirmError = validateField('confirmPassword', formData.confirmPassword);
-            setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
-        }
+        const error = validateField(name, value);
+        setErrors(prevErrors => ({ ...prevErrors, [name]: error }));
     };
 
-    const handleSubmit = (e) => {
+    const validateField = (name, value) => {
+        let error = null;
+        if (!value.trim()) {
+            error = name === "newPassword" ? "New password is required" : "Confirm password is required";
+        } else if (name === "newPassword" && value.length < 6) {
+            error = "Password must be at least 6 characters long";
+        } else if (name === "confirmPassword" && value !== formData.newPassword) {
+            error = "Passwords do not match";
+        }
+        return error;
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         const formErrors = {};
         Object.keys(formData).forEach(field => {
             const error = validateField(field, formData[field]);
             if (error) formErrors[field] = error;
         });
 
-        if (Object.values(formErrors).some(error => error)) {
+        if (Object.keys(formErrors).length > 0) {
             setErrors(formErrors);
             return;
         }
 
-        setErrors({});
-        alert("Password reset successfully!");
-        // Clear the reset email from session
-        sessionStorage.removeItem('resetEmail');
-        // Navigate to login page
-        navigate('/login');
+        try {
+            const response = await axios.post("http://localhost:8000/users/reset-password", {
+                email,
+                newPassword: formData.newPassword
+            });
+
+            if (response.data.message === "Password updated successfully") {
+                alert("Password reset successful!");
+                navigate("/login");
+            } else {
+                alert("Failed to reset password. Please try again.");
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || "Something went wrong. Please try again.";
+            alert(msg);
+        }
     };
 
     return (
@@ -83,21 +95,21 @@ const ResetPassword = () => {
                             
                             <form onSubmit={handleSubmit} className="needs-validation">
                                 <div className="mb-4">
-                                    <label htmlFor="password" className="form-label small fw-medium">New Password</label>
+                                    <label htmlFor="newPassword" className="form-label small fw-medium">New Password</label>
                                     <div className="input-group">
                                         <span className="input-group-text bg-white border-end-0">
                                             <i className="fas fa-lock text-muted"></i>
                                         </span>
                                         <input 
                                             type="password" 
-                                            id="password" 
-                                            name="password"
-                                            className={`form-control border-start-0 ps-0 ${errors.password ? 'is-invalid' : ''}`}
+                                            id="newPassword" 
+                                            name="newPassword"
+                                            className={`form-control border-start-0 ps-0 ${errors.newPassword ? 'is-invalid' : ''}`}
                                             placeholder="Enter new password" 
-                                            value={formData.password}
+                                            value={formData.newPassword}
                                             onChange={handleChange}
                                         />
-                                        {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+                                        {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
                                     </div>
                                 </div>
 
@@ -123,7 +135,12 @@ const ResetPassword = () => {
                                 <button 
                                     type="submit" 
                                     className="btn btn-primary w-100 py-3 mb-4 fw-medium"
-                                    disabled={!!errors.password || !!errors.confirmPassword || !formData.password || !formData.confirmPassword}
+                                    disabled={
+                                        !!errors.newPassword || 
+                                        !!errors.confirmPassword || 
+                                        !formData.newPassword || 
+                                        !formData.confirmPassword
+                                    }
                                 >
                                     Reset Password
                                 </button>

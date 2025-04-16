@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const Contact = () => {
 	const [formData, setFormData] = useState({
@@ -10,6 +11,24 @@ const Contact = () => {
 		contactMessage: "",
 	});
 	const [errors, setErrors] = useState({});
+	const [contactInfo, setContactInfo] = useState({
+		contactNumber: "",
+		contactEmail: "",
+	  });
+
+	  useEffect(() => {
+		const fetchContactInfo = async () => {
+		  try {
+			const response = await axios.get("http://localhost:8000/contact");
+			setContactInfo(response.data);
+		  } catch (error) {
+			console.error("Failed to fetch contact info", error);
+			alert("Unable to load contact details.");
+			//toast.error("Unable to load contact details.");
+		  }
+		};
+		fetchContactInfo();
+	  }, []);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -50,7 +69,7 @@ const Contact = () => {
 		return error;
 	};
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
 
 		// Validate all fields
@@ -65,14 +84,40 @@ const Contact = () => {
 			return;
 		}
 
-		setErrors({});
-		toast.success("Message sent successfully!");
-		setFormData({
-			contactName: "",
-			contactEmail: "",
-			contactPhone: "",
-			contactMessage: "",
-		});
+		try {
+			const responsePayload = {
+			  name: formData.contactName,
+			  email: formData.contactEmail,
+			  phone: formData.contactPhone,
+			  message: formData.contactMessage,
+			};
+	  
+			// Send the form data to the backend
+			await axios.post("http://localhost:8000/responses", responsePayload);
+			alert("Message sent successfully!");
+			//toast.success("Message sent successfully!");
+	  
+			setFormData({
+			  contactName: "",
+			  contactEmail: "",
+			  contactPhone: "",
+			  contactMessage: "",
+			});
+			setErrors({});
+		  } catch (error) {
+			console.error("Error submitting contact form:", error);
+			alert("Failed to send message. Please try again later.");
+			//toast.error("Failed to send message. Please try again later.");
+		  }
+
+		// setErrors({});
+		// toast.success("Message sent successfully!");
+		// setFormData({
+		// 	contactName: "",
+		// 	contactEmail: "",
+		// 	contactPhone: "",
+		// 	contactMessage: "",
+		// });
 	};
 
 	return (

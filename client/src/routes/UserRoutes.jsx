@@ -19,12 +19,14 @@ import ResetPassword from "../pages/user/ResetPassword";
 import Wishlist from "../pages/user/Wishlist";
 import OrderHistory from "../pages/user/OrderHistory";
 import EmailVerification from "../pages/user/EmailVerification";
+import VerifyEmail from "../pages/user/VerifyEmail";
 
 const UserRoutes = () => {
   return (
     <Routes>
         <Route path="/" element={<UserLayout />}>
             <Route index element={<Home />} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route path="shop" element={<Shop />} />
             <Route path="product" element={<ProductDetails />} />
             <Route path="about" element={<About />} />

@@ -1,43 +1,55 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState("");
-    const [error, setError] = useState("");
+    const [email, setEmail] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const validateEmail = (email) => {
-        if (!email.trim()) return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address";
-        return "";
-    };
-
     const handleChange = (e) => {
-        const value = e.target.value;
-        setEmail(value);
-        // Validate on change
-        const validationError = validateEmail(value);
-        setError(validationError);
+        const newEmail = e.target.value;
+        setEmail(newEmail);
+
+        if (!newEmail.trim()) {
+            setError('Email is required');
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+            setError('Enter a valid email address');
+        } else {
+            setError('');
+        }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        const validationError = validateEmail(email);
-        if (validationError) {
-            setError(validationError);
+
+        if (!email.trim()) {
+            setError('Email is required');
+            return;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setError('Enter a valid email address');
             return;
         }
 
-        // Store email in sessionStorage for later use
-        sessionStorage.setItem('resetEmail', email);
-        
-        setError("");
-        alert("OTP sent to your email!");
-        // Navigate to OTP verification page
-        navigate('/verify-otp');
-    };
+        setError('');
+        setLoading(true);
 
+        try {
+            const response = await axios.post('http://localhost:8000/users/send-otp', { email });
+            console.log(response)
+            if (response.data.message === "OTP sent successfully") {
+                // Store email temporarily (for OTP verify page)
+                sessionStorage.setItem("resetEmail", email);
+                navigate("/verify-otp");
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || "Something went wrong";
+            setError(msg);
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <div className="container-fluid p-0">
             <div className="row g-0 min-vh-100">

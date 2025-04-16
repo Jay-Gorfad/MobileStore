@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import UpdatePasswordForm from './UpdatePasswordForm';
 import UpdateProfileForm from './UpdateProfileForm';
+import WishlistTable from '../../../components/user/WishlistTable';
+import OrdersTable from '../../../components/user/OrdersTable';
 import UpdateEmailForm from './UpdateEmailForm';
 import { useLocation } from "react-router-dom";
 
