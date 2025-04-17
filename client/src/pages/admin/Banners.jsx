@@ -91,7 +91,7 @@ const Banners = () => {
             </div>
 
             {/* Free Delivery Banners */}
-            <div className="row">
+            {/* <div className="row">
                 <div className="col-md-6 col-12">
                 <h5>Free Delivery Banners</h5>
                 {freeDeliveryBanners.map((banner) => (
@@ -144,7 +144,7 @@ const Banners = () => {
                     </div>
                 ))}
                 </div>
-            </div>
+            </div> */}
 
            
             {/* Slider Banners with DataTable */}

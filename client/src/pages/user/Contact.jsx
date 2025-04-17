@@ -150,13 +150,13 @@ const Contact = () => {
                                 </div>
 
 
-							<div className="d-flex align-items-center">
+							{/* <div className="d-flex align-items-center">
 								<i className="fas fa-map-marker-alt text-primary fs-5 me-3"></i>
 								<div>
 									<div className="text-muted small">Address</div>
 									<div className="fw-medium">Kothariya Road,<br />Rajkot - 360002</div>
 								</div>
-							</div>
+							</div> */}
 
 							{/* <hr className="my-4" />
 

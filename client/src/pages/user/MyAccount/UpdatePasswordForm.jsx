@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
-const UpdatePasswordForm = ({ email }) => {
+const UpdatePasswordForm = () => {
+    
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',

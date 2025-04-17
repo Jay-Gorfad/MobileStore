@@ -95,12 +95,12 @@ const ProductList = () => {
             name: "Actions",
             cell: row => (
                 <div className="d-flex flex-nowrap">
-                    <Link className="btn btn-info btn-sm me-1" to={`/admin/view-product/${row._id}`}>View</Link>
+                    {/* <Link className="btn btn-info btn-sm me-1" to={`/admin/view-product/${row._id}`}>View</Link> */}
                     <Link className="btn btn-success btn-sm me-1" to={`/admin/update-product/${row._id}`}>Update</Link>
                     <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>Delete</button>
                 </div>
             ),
-            width:"210px"
+            width:"240px"
         },
     ];
 

@@ -68,10 +68,10 @@ const Users = () => {
             name: "Actions",
             cell: row => (
                 <div className="d-flex gap-1">
-                    <Link to={`/admin/user-details/${row._id}`} className="btn btn-info btn-sm">View</Link>
+                    {/* <Link to={`/admin/user-details/${row._id}`} className="btn btn-info btn-sm">View</Link> */}
                     <Link to={`/admin/update-user/${row._id}`} className="btn btn-warning btn-sm">Edit</Link>
                     <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>Delete</button>
-                    <Link to={`/admin/cart/${row._id}`} className="btn btn-info btn-sm">Cart</Link>
+                    {/* <Link to={`/admin/cart/${row._id}`} className="btn btn-info btn-sm">Cart</Link> */}
                 </div>
             ),
             width:"250px"
