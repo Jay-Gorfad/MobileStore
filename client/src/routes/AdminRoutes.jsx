@@ -51,24 +51,24 @@ const AdminRoutes = () => {
 
         <Route path="cart" element={<Cart />} />
         <Route path="add-to-cart" element={<AddToCart />} />
-        <Route path="update-cart" element={<UpdateCart />} />
+        <Route path="update-cart/:id" element={<UpdateCart />} />
 
         <Route path="reviews" element={<Reviews />} />
         <Route path="add-review" element={<AddReview />} />
-        <Route path="update-review" element={<UpdateReview />} />
+        <Route path="update-review/:id" element={<UpdateReview />} />
 
         <Route path="products" element={<Products />} />
         <Route path="add-product" element={<AddProduct />} />
-        <Route path="update-product" element={<UpdateProduct />} />
+        <Route path="update-product/:id" element={<UpdateProduct />} />
         <Route path="view-product" element={<ViewProduct />} />
 
         <Route path="categories" element={<Categories />} />
         <Route path="add-category" element={<AddCategory />} />
-        <Route path="update-category" element={<UpdateCategory />} />
+        <Route path="update-category/:id" element={<UpdateCategory />} />
 
         <Route path="offers" element={<Offers />} />
         <Route path="add-offer" element={<AddOffer />} />
-        <Route path="update-offer" element={<UpdateOffer />} />
+        <Route path="update-offer/:id" element={<UpdateOffer />} />
 
         <Route path="responses" element={<Responses />} />
 
@@ -79,7 +79,7 @@ const AdminRoutes = () => {
 
         <Route path="orders" element={<Orders />} />
         <Route path="add-order" element={<AddOrder />} />
-        <Route path="update-order" element={<UpdateOrder />} />
+        <Route path="update-order/:id" element={<UpdateOrder />} />
         <Route path="view-order" element={<ViewOrder />} />
 
       </Route>
