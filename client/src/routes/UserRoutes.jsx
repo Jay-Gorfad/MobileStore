@@ -28,7 +28,7 @@ const UserRoutes = () => {
             <Route index element={<Home />} />
             <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route path="shop" element={<Shop />} />
-            <Route path="product" element={<ProductDetails />} />
+            <Route path="product/:id" element={<ProductDetails />} />
             <Route path="about" element={<About />} />
             <Route path="contact" element={<Contact />} />
 

@@ -85,18 +85,18 @@ const Carousel = ({ banners }) => {
         {banners.map((banner, index) => (
           <div
             key={banner.id}
-            className={`carousel-item ${index === activeIndex ? "active" : ""}`}
+            className={`carousel-item align-items-center ${index === activeIndex ? "active" : ""}`}
           >
             <img
               className="d-block w-100"
               src={`${banner.bannerImage}`}
               alt={`Banner ${index + 1}`}
-              height={"300px"}
+              height={"390px"}
             />
             {index === 0 && (
-              <div className="text-white carousel-caption d-md-block">
+              <div className="text-white carousel-caption d-md-block ">
                 <div className="row align-items-center">
-                  <div className="col-md-6 text-md-start text-center">
+                  <div className="col-md-6 text-md-start text-center mb-5">
                     <span>Welcome to</span>
                     <h1>MobiTrendz</h1>
                     <p>

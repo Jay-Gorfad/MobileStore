@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { toast } from "react-toastify";
 
 const ProductList = ({ filters={ ratings: "", priceRange: "", discount: "" } }) => {
   const [products, setProducts] = useState([]);
@@ -17,7 +16,7 @@ const ProductList = ({ filters={ ratings: "", priceRange: "", discount: "" } }) 
       });
       setProducts(res.data || []);
     } catch (err) {
-      toast.error("Failed to fetch products");
+      alert("Failed to fetch products");
       console.error(err);
     }
   };
@@ -27,7 +26,7 @@ const ProductList = ({ filters={ ratings: "", priceRange: "", discount: "" } }) 
   }, [filters]);
 
   const handleWishlistClick = () => {
-    toast.success("Product added to wishlist successfully!");
+    alert("Product added to wishlist successfully!");
   };
 
   return (
@@ -78,8 +77,8 @@ const ProductList = ({ filters={ ratings: "", priceRange: "", discount: "" } }) 
                   </small>
 
                   <div className="mb-2">
-                    <span className="fw-bold text-primary me-2">₹{product.salePrice}</span>
-                    <span className="text-muted text-decoration-line-through small">₹{product.costPrice}</span>
+                    <span className="fw-bold text-primary me-2">₹{product.costPrice}</span>
+                    <span className="text-muted text-decoration-line-through small">₹{product.salePrice}</span>
                   </div>
 
                   {/* ⭐ Rating Stars + Total Reviews */}

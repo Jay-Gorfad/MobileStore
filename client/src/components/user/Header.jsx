@@ -94,7 +94,7 @@ const Header = () => {
 
 						{isLoggedIn ? (
 							<div className="d-flex align-items-center justify-content-center mt-3 mt-lg-0">
-								<div className="dropdown profile-menu me-3">
+								<div className="dropdown profile-menu">
 									<a
 										className="nav-link dropdown-toggle d-flex align-items-center justify-content-center"
 										href="#"

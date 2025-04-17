@@ -1,339 +1,244 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import axios from "axios";
 
 const ProductDetails = () => {
-    const product = {
-        id: 1,
-        name: "IPhone 15 Pro Max",
-        image: "67409349bfcac_71yzJoE7WlL._SX679_.jpg",
-        description: "The 6.7” Super Retina XDR display with ProMotion ramps up refresh rates to 120Hz when you need exceptional graphics performance. ",
-        salePrice: 500,
-        discount: 10, // 10% discount
-        rating: 4.5,
-        reviewCount: 8,
-        specifications: [
-            { label: "Display", value: "6.7” AMOLED Display" },
-            { label: "Processor", value: "A17 PRO CHIP" },
-            { label: "RAM", value: "8 GB" },
-            { label: "Storage", value: "256 GB" },
-            { label: "Rear Camera", value: "48MP" },
-            { label: "Front Camera", value: "24MP" },
-            { label: "Battery", value: "5000mah" },
-            { label: "Operating System", value: "IOS" },
-            { label: "Color", value: "Space Black" }
-        ]
-    };
-    
-    const reviews = [
-        {
-            id: 1,
-            user: "Jay Gorfad",
-            rating: 5,
-            review: "Excellent Mobile",
-            date: "March 10, 2025",
-            reply: "Thank you for your feedback.",
-            replier: "Seller",
-            replyDate: "March 10, 2025",
-        },
-        {
-            id: 2,
-            user: "Prince Bhatt", 
-            rating: 4,
-            review: "Good Processor.",
-            date: "March 11, 2025",
-            reply: "We appreciate your review.",
-            replier: "Seller",
-            replyDate: "March 11, 2025",
-        },
-        {
-            id: 3,
-            user: "Jay Barasiya",
-            rating: 5,
-            review: "Good Camera",
-            date: "March 12, 2025",
-            reply: "Thank you.",
-            replier: "Seller",
-            replyDate: "March 12, 2025",
-        },
-    ];
-    
-    
-    const finalPrice = (139000).toFixed(2);
-    const [selectedQuantity, setSelectedQuantity] = useState(1);
+    const { id } = useParams();
+    const [product, setProduct] = useState(null);
+    const [reviews, setReviews] = useState([]);
+    const [quantity, setQuantity] = useState("");
     const [review, setReview] = useState({ rating: "", review: "" });
     const [errors, setErrors] = useState({});
-    
-    const handleQuantityChange = (action) => {
-        if (action === 'increment' && selectedQuantity < 5) {
-            setSelectedQuantity(prev => prev + 1);
-            setErrors(prevErrors => ({ ...prevErrors, quantity: "" }));
-        } else if (action === 'decrement' && selectedQuantity > 1) {
-            setSelectedQuantity(prev => prev - 1);
-            setErrors(prevErrors => ({ ...prevErrors, quantity: "" }));
-        } else if (action === 'input') {
-            setErrors(prevErrors => ({ ...prevErrors, quantity: "" }));
+    const [hasPurchased, setHasPurchased] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
+
+    useEffect(() => {
+        fetchProduct();
+        fetchReviews();
+        checkPurchaseAndReview();
+    }, [id]);
+
+    const fetchProduct = async () => {
+        try {
+            const res = await axios.get(`http://localhost:8000/products/${id}`);
+            setProduct(res.data);
+        } catch (err) {
+            console.error("Failed to fetch product", err);
         }
     };
 
-    const handleInputQuantity = (e) => {
-        const value = parseInt(e.target.value) || "";
-        if (value === "" || (value >= 1 && value <= 5)) {
-            setSelectedQuantity(value);
-            setErrors(prevErrors => ({ ...prevErrors, quantity: "" }));
+    const fetchReviews = async () => {
+        try {
+            const res = await axios.get(`http://localhost:8000/reviews?productId=${id}`);
+            setReviews(res.data);
+        } catch (err) {
+            console.error("Failed to fetch reviews", err);
         }
     };
-    
+
+    const checkPurchaseAndReview = async () => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (!user) return;
+
+            const res = await axios.get(`http://localhost:8000/orders/hasPurchased/${user._id}/${id}`);
+            setHasPurchased(res.data.hasPurchased);
+
+            const reviewRes = await axios.get(`http://localhost:8000/reviews?productId=${id}&userId=${user._id}`);
+            setHasReviewed(reviewRes.data.length > 0);
+        } catch (err) {
+            console.error("Error checking purchase/review", err);
+        }
+    };
+
+    const finalPrice = product ? (product.salePrice - (product.salePrice * product.discount / 100)).toFixed(2) : "0.00";
+
+    const validateInputs = () => {
+        const newErrors = {};
+        if (!quantity || quantity <= 0) newErrors.quantity = "Please select a valid quantity";
+        if (review.rating && (review.rating < 1 || review.rating > 5)) newErrors.rating = "Rating must be 1-5";
+        if (review.review && !review.review.trim()) newErrors.review = "Review cannot be empty";
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleCartSubmit = () => {
+        if (validateInputs()) {
+            alert("Product added to cart successfully!");
+            setQuantity("");
+            setErrors({});
+        }
+    };
+
     const handleReviewChange = (e) => {
         const { name, value } = e.target;
         setReview({ ...review, [name]: value });
-    
-        // Validate and update errors for the changed field
-        const error = validateField(name, value);
-        setErrors(prevErrors => ({ ...prevErrors, [name]: error }));
     };
-    
-    const validateField = (name, value) => {
-        let error = null;
-        
-        if (name === "rating") {
-            if (!value) error = "Rating is required";
-        } else if (name === "review") {
-            if (!value.trim()) error = "Review cannot be empty";
-        } else if (name === "quantity") {
-            if (!value) error = "Please select a quantity";
-        }
-    
-        return error;
-    };
-    
-    const validateReview = () => {
-        let errors = {};
-    
-        errors.rating = validateField("rating", review.rating);
-        errors.review = validateField("review", review.review);
-    
-        // Remove null errors
-        Object.keys(errors).forEach((key) => {
-            if (!errors[key]) delete errors[key];
-        });
-    
-        setErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-    
-    const submitReview = (e) => {
+
+    const submitReview = async (e) => {
         e.preventDefault();
-        if (validateReview()) {
-            alert("Review submitted successfully!");
-            // toast.success("Review submitted successfully!");
+        if (!review.rating || !review.review) {
+            setErrors({
+                rating: review.rating ? "" : "Rating is required",
+                review: review.review ? "" : "Review cannot be empty",
+            });
+            return;
+        }
+
+        try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            const userId = user?._id;
+            if (!userId) {
+                alert("Login required");
+                return;
+            }
+
+            await axios.post("http://localhost:8000/reviews", {
+                productId: id,
+                userId,
+                rating: review.rating,
+                review: review.review,
+            });
+
+            alert("Review submitted!");
             setReview({ rating: "", review: "" });
-            setErrors({});
+            fetchReviews();
+        } catch (err) {
+            alert("Failed to submit review");
         }
     };
-    
-    const validateQuantity = () => {
-        let errors = {};
-        if(!selectedQuantity) errors.quantity = "Please select a quantity";
-        setErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-    
-    const handleCartSubmit = ()=>{
-        if (validateQuantity()) {
-            alert("Product added to cart successfully!");
-            // toast.success("Product added to cart successfully!");
-            setSelectedQuantity(1);
-            setErrors({});
-        }
-    }
+
+    if (!product) return <div className="text-center py-5">Loading...</div>;
+
     return (
         <div className="container py-5">
-            <nav aria-label="breadcrumb" className="mb-4">
-                <ol className="breadcrumb">
-                    <li className="breadcrumb-item">
-                        <Link to="/" className="text-decoration-none text-muted">Home</Link>
-                    </li>
-                    <li className="breadcrumb-item">
-                        <Link to="/shop" className="text-decoration-none text-muted">Shop</Link>
-                    </li>
-                    <li className="breadcrumb-item active" aria-current="page">{product.name}</li>
-                </ol>
-            </nav>
+            <p className="breadcrumb">
+                <Link to="/" className="text-muted text-decoration-none">Home</Link> /
+                <Link to="/shop" className="text-muted text-decoration-none mx-2">Shop</Link> /
+                <span className="fw-bold">{product.productName}</span>
+            </p>
 
-            <div className="card border-0 shadow-sm mb-5">
-                <div className="row g-0">
+            <div className="card shadow-lg p-4 border-0">
+                <div className="row g-4">
                     <div className="col-md-5">
-                        <div className="p-4">
-                            <img 
-                                src={`/img/items/products/${product.image}`} 
-                                alt={product.name}
-                                className="img-fluid rounded"
-                            />
-                        </div>
+                        <img src={product.productImage} alt={product.productName} className="img-fluid rounded" />
                     </div>
+
                     <div className="col-md-7">
-                        <div className="p-4 p-md-5">
-                            <h2 className="mb-3">{product.name}</h2>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="ratings me-2">
-                                    {[...Array(5)].map((_, i) => (
-                                        <span key={i} className={`fa fa-star ${product.rating > i ? "text-warning" : "text-muted"}`}></span>
-                                    ))}
-                                </div>
-                                <span className="text-muted">({product.reviewCount} reviews)</span>
-                            </div>
-                            <p className="text-muted mb-4">{product.description}</p>
-                            <div className="mb-4">
-                                <h4 className="text-primary mb-0">₹{finalPrice}</h4>
-                                {product.discount > 0 && (
-                                    <small className="text-success">
-                                        {product.discount}% OFF
-                                    </small>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label className="form-label">Quantity</label>
-                                <div className="input-group" style={{ width: "140px" }}>
-                                    <button 
-                                        className="btn btn-outline-secondary" 
-                                        type="button"
-                                        onClick={() => handleQuantityChange('decrement')}
-                                    >
-                                        <i className="fa fa-minus"></i>
-                                    </button>
-                                    <input 
-                                        type="number" 
-                                        className="form-control text-center"
-                                        value={selectedQuantity}
-                                        onChange={handleInputQuantity}
-                                        min="1"
-                                        max="5"
-                                    />
-                                    <button 
-                                        className="btn btn-outline-secondary" 
-                                        type="button"
-                                        onClick={() => handleQuantityChange('increment')}
-                                    >
-                                        <i className="fa fa-plus"></i>
-                                    </button>
-                                </div>
-                                {errors.quantity && (
-                                    <div className="text-danger mt-1 small">{errors.quantity}</div>
-                                )}
-                            </div>
-                            <Link to="/cart">
-                            <button 
-                                onClick={handleCartSubmit} 
-                                className="btn btn-primary btn-lg w-100"
+                        <h2 className="fw-bold">{product.productName}</h2>
+
+                        <div className="d-flex align-items-center mb-2">
+                            {[...Array(5)].map((_, i) => (
+                                <span key={i} className={`fa fa-star ${product.averageRating > i ? "text-warning" : "text-muted"}`}></span>
+                            ))}
+                            <span className="ms-2 text-muted">({product.totalReviews || 0} reviews)</span>
+                        </div>
+
+                        <p className="text-muted">{product.description}</p>
+
+                        <div className="mb-3">
+                            <span className="fs-5 fw-semibold text-success">₹{finalPrice}</span>
+                            {product.discount > 0 && (
+                                <span className="text-muted text-decoration-line-through ms-2">
+                                    ₹{product.salePrice.toFixed(2)}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="mb-3">
+                            <label className="form-label">Quantity</label>
+                            <select
+                                className="form-select"
+                                value={quantity}
+                                onChange={(e) => {
+                                    setQuantity(e.target.value);
+                                    setErrors(prev => ({ ...prev, quantity: "" }));
+                                }}
                             >
-                                Add to Cart
-                            </button></Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="card border-0 shadow-sm mb-5">
-                <div className="card-body">
-                    <h4 className="card-title text-center mb-4">Product Specifications</h4>
-                    <div className="row justify-content-center">
-                        <div className="col-lg-8">
-                            <div className="table-responsive">
-                                <table className="table table-striped">
-                                    <tbody>
-                                        {product.specifications.map((spec, index) => (
-                                            <tr key={index}>
-                                                <th className="bg-light text-secondary" style={{width: "30%"}}>{spec.label}</th>
-                                                <td>{spec.value}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="card border-0 shadow-sm">
-                <div className="card-body">
-                    <h4 className="card-title text-center mb-4">Customer Reviews</h4>
-                    <div className="row">
-                        <div className="col-lg-6 mb-4 mb-lg-0">
-                            <div className="card border">
-                                <div className="card-body">
-                                    <h5 className="card-title mb-4">Write a Review</h5>
-                                    <form onSubmit={submitReview}>
-                                        <div className="mb-3">
-                                            <label className="form-label">Rating</label>
-                                            <select 
-                                                name="rating" 
-                                                className="form-select"
-                                                onChange={handleReviewChange}
-                                                value={review.rating}
-                                            >
-                                                <option value="">Select rating</option>
-                                                {[1, 2, 3, 4, 5].map(r => (
-                                                    <option key={r} value={r}>{r} Star{r > 1 ? 's' : ''}</option>
-                                                ))}
-                                            </select>
-                                            {errors.rating && (
-                                                <div className="text-danger small mt-1">{errors.rating}</div>
-                                            )}
-                                        </div>
-                                        <div className="mb-3">
-                                            <label className="form-label">Review</label>
-                                            <textarea 
-                                                name="review"
-                                                className="form-control"
-                                                rows="3"
-                                                placeholder="Share your experience with this product"
-                                                onChange={handleReviewChange}
-                                                value={review.review}
-                                            ></textarea>
-                                            {errors.review && (
-                                                <div className="text-danger small mt-1">{errors.review}</div>
-                                            )}
-                                        </div>
-                                        <button type="submit" className="btn btn-primary">
-                                            Submit Review
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-lg-6">
-                            <div className="row g-3">
-                                {reviews.map(r => (
-                                    <div key={r.id} className="col-12">
-                                        <div className="card border h-100">
-                                            <div className="card-body">
-                                                <div className="d-flex justify-content-between align-items-center mb-2">
-                                                    <h6 className="card-subtitle mb-0">{r.user}</h6>
-                                                    <small className="text-muted">{r.date}</small>
-                                                </div>
-                                                <div className="mb-2">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <span key={i} className={`fa fa-star ${r.rating > i ? "text-warning" : "text-muted"}`}></span>
-                                                    ))}
-                                                </div>
-                                                <p className="card-text">{r.review}</p>
-                                                {r.reply && (
-                                                    <div className="border-start border-3 ps-3 mt-3">
-                                                        <div className="d-flex justify-content-between align-items-center mb-2">
-                                                            <h6 className="card-subtitle mb-0 text-primary">{r.replier}</h6>
-                                                            <small className="text-muted">{r.replyDate}</small>
-                                                        </div>
-                                                        <p className="card-text mb-0">{r.reply}</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
+                                <option value="">Select quantity</option>
+                                {[...Array(10)].map((_, i) => (
+                                    <option key={i + 1} value={i + 1}>{i + 1}</option>
                                 ))}
-                            </div>
+                            </select>
+                            {errors.quantity && <p className="text-danger">{errors.quantity}</p>}
                         </div>
+
+                        <button className="btn btn-primary w-100" onClick={handleCartSubmit}>
+                            Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5">
+                <h4 className="text-center fw-bold mb-4">Customer Reviews</h4>
+                <div className="row">
+                    <div className="col-md-6">
+                        {hasPurchased ? (
+                            hasReviewed ? (
+                                <div className="alert alert-info">You have already reviewed this product.</div>
+                            ) : (
+                                <form onSubmit={submitReview} className="card p-4 shadow-sm">
+                                    <div className="mb-3">
+                                        <label className="form-label">Rating</label>
+                                        <select
+                                            name="rating"
+                                            className="form-select"
+                                            value={review.rating}
+                                            onChange={handleReviewChange}
+                                        >
+                                            <option value="">Select rating</option>
+                                            {[1, 2, 3, 4, 5].map(r => (
+                                                <option key={r} value={r}>{r} Star{r > 1 && 's'}</option>
+                                            ))}
+                                        </select>
+                                        {errors.rating && <p className="text-danger">{errors.rating}</p>}
+                                    </div>
+
+                                    <div className="mb-3">
+                                        <label className="form-label">Your Review</label>
+                                        <textarea
+                                            name="review"
+                                            className="form-control"
+                                            rows="3"
+                                            value={review.review}
+                                            onChange={handleReviewChange}
+                                            placeholder="Share your experience..."
+                                        />
+                                        {errors.review && <p className="text-danger">{errors.review}</p>}
+                                    </div>
+
+                                    <button type="submit" className="btn btn-outline-primary">Submit Review</button>
+                                </form>
+                            )
+                        ) : (
+                            <div className="alert alert-warning">
+                                You need to purchase this product to leave a review.
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="col-md-6">
+                        {reviews.map((r) => (
+                            <div key={r._id} className="card mb-3 shadow-sm">
+                                <div className="card-body">
+                                    <h6 className="fw-bold mb-1">{r.userId?.firstName} {r.userId?.lastName}</h6>
+                                    <div className="mb-2">
+                                        {[...Array(5)].map((_, i) => (
+                                            <span key={i} className={`fa fa-star ${r.rating > i ? "text-warning" : "text-muted"}`}></span>
+                                        ))}
+                                    </div>
+                                    <p>{r.review}</p>
+                                    <small className="text-muted">{new Date(r.createdAt).toLocaleDateString()}</small>
+                                </div>
+                                {r.reply && (
+                                    <div className="card-footer bg-light">
+                                        <strong>{r.replier || "Admin"}:</strong> {r.reply}<br />
+                                        <small className="text-muted">{new Date(r.replyDate).toLocaleDateString()}</small>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

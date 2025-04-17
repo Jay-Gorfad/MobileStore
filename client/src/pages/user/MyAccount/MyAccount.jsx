@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import UpdatePasswordForm from './UpdatePasswordForm';
 import UpdateProfileForm from './UpdateProfileForm';
-import UpdateEmailForm from './UpdateEmailForm';
 import { useLocation } from "react-router-dom";
 import { toast } from 'react-toastify';
+import { useAuth } from '../../../contexts/AuthContext'; // adjust path if needed
 
 const MyAccount = () => {
     const [userData, setUserData] = useState(null);
     const location = useLocation();
     const message = location.state?.message;
-
+    const { user } = useAuth();
+    const firstName = user?.firstName;
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -41,7 +42,7 @@ const MyAccount = () => {
                 <p>
                     <a href="#" className="text-decoration-none dim link">Home /</a> Account
                 </p>
-                <p>Welcome! <span className="highlight">{userData?.firstName || 'User'}</span></p>
+                <p>Welcome! <span className="highlight">{firstName || 'User'}</span></p>
             </div>
             
             <div className="row mt-4 justify-content-center">
