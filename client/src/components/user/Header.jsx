@@ -50,7 +50,7 @@ const Header = () => {
 	return (
 		<nav id="navibar" className="navbar navbar-expand-lg navbar-light sticky-top container-fluid">
 			<div className="container-fluid">
-				<Link className="logo navbar-brand fs-1 fw-bold" to="/">MobiTrendz</Link>
+				<Link className="logo navbar-brand fs-1 fw-bold ms-5" to="/">MobiTrendz</Link>
 				<button
 					className="navbar-toggler"
 					type="button"

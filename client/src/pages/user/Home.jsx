@@ -91,7 +91,7 @@ const Carousel = ({ banners }) => {
               className="d-block w-100"
               src={`${banner.bannerImage}`}
               alt={`Banner ${index + 1}`}
-              height={"390px"}
+              height={"420px"}
             />
             {index === 0 && (
               <div className="text-white carousel-caption d-md-block ">

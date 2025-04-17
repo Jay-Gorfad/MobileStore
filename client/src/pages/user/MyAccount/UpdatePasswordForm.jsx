@@ -64,7 +64,7 @@ const UpdatePasswordForm = () => {
         }
 
         if (!email) {
-            toast.error("User email not found.");
+            alert("User email not found.");
             return;
         }
 
@@ -77,13 +77,13 @@ const UpdatePasswordForm = () => {
             });
 
             if (res.data.message === "Password updated successfully") {
-                toast.success("Password updated successfully!");
+                alert("Password updated successfully!");
                 setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
             } else {
-                toast.error(res.data.message || "Failed to update password.");
+                alert(res.data.message || "Failed to update password.");
             }
         } catch (err) {
-            toast.error(err.response?.data?.message || "Something went wrong.");
+            alert(err.response?.data?.message || "Something went wrong.");
         } finally {
             setLoading(false);
         }
