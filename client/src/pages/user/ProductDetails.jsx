@@ -137,12 +137,12 @@ const ProductDetails = () => {
                         <p className="text-muted">{product.description}</p>
 
                         <div className="mb-3">
-                            <span className="fs-5 fw-semibold text-success">₹{finalPrice}</span>
-                            {product.discount > 0 && (
-                                <span className="text-muted text-decoration-line-through ms-2">
-                                    ₹{product.salePrice.toFixed(2)}
+                             <span className="fs-5 fw-semibold text-success">₹{(product.costPrice || product.salePrice).toFixed(2)}</span>
+                             {product.discount > 0 && product.salePrice && (
+                            <span className="text-muted text-decoration-line-through ms-2">
+                            ₹{product.salePrice.toFixed(2)}
                                 </span>
-                            )}
+                                )}
                         </div>
 
                         <div className="mb-3">
