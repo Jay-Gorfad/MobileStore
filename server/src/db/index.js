@@ -1,6 +1,6 @@
 const mongoose = require('mongoose'); 
 
-const DB_NAME = "purebite";
+const DB_NAME = "mobitrendz";
 const connectDB = async () => {
     try {
         const connectionInstance = await mongoose.connect(`${process.env.MONGODB_URI}/${DB_NAME}`)
