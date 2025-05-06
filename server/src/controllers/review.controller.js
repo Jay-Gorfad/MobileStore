@@ -21,7 +21,7 @@ exports.getReviews = async (req, res) => {
 
     const reviews = await Review.find(filter)
         .populate("productId", "productName productImage")
-      .populate("userId", "firstName lastName email");
+      .populate("userId", "firstName lastName email profilePicture");
 
     res.status(200).json(reviews);
   } catch (err) {

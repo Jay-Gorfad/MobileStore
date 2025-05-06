@@ -19,7 +19,7 @@ const transporter = nodemailer.createTransport({
 // Register a new user with email verification link
 const register = async (req, res) => {
   try {
-    const { firstName, lastName, email, mobile, password, authType, firebaseUid } = req.body;
+    const { firstName, lastName, email, mobile, password, authType } = req.body;
 
     if (!firstName || !lastName || !email || !mobile || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -38,8 +38,7 @@ const register = async (req, res) => {
       email,
       mobile,
       password: hashedPassword,
-      authType: authType || "manual",
-      firebaseUid,
+      authType: authType || "Email",
       status: "Inactive",
     });
 
@@ -49,7 +48,7 @@ const register = async (req, res) => {
     const verificationToken = jwt.sign({ email: newUser.email }, JWT_SECRET, { expiresIn: "1d" });
 
     // Construct verification link
-    const verificationLink = `http://localhost:5173/verify-email/${verificationToken}`;
+    const verificationLink = `https://grocery-store-mern.onrender.com/verify-email/${verificationToken}`;
 
     // Send verification email
     await transporter.sendMail({
@@ -139,12 +138,39 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// Verify Email
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findOne({ email: decoded.email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.status === "Active") {
+      return res.status(400).json({ message: "Email already verified" });
+    }
+
+    user.status = "Active";
+    await user.save();
+
+    res.json({ message: "Email verified successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Invalid or expired token" });
+  }
+};
+
 //update password
-// Reset Password
 const updatePassword = async (req, res) => {
     try {
       const { email, currentPassword, newPassword } = req.body;
-  
+
       const user = await User.findOne({ email });
       if (!user) return res.status(404).json({ message: "User not found" });
   
@@ -153,7 +179,6 @@ const updatePassword = async (req, res) => {
   
       const hashed = await bcrypt.hash(newPassword, 10);
       await User.findOneAndUpdate({ email }, { password: hashed });
-  
       res.json({ message: "Password updated successfully" });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -197,7 +222,7 @@ const createUser = async (req, res) => {
 // Get All Users
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ status: { $ne: "Deleted" } });
+    const users = await User.find({ status: { $ne: "Deleted" } , role:"User"});
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -262,34 +287,69 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-// Verify Email
-const verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) {
-      return res.status(400).json({ message: "Verification token is required" });
+
+// POST /api/auth/google-login
+const googleLogin = async (req, res) => {
+    try {
+      const { email, authType } = req.body;
+  
+      if (!email || !authType) {
+        return res.status(400).json({ message: "Email and authType are required" });
+      }
+  
+      // Check if user already exists
+      let user = await User.findOne({ email });
+  
+      if (!user) {
+        // New user → register
+        user = await User.create({
+          email,
+          authType, // Should be 'google'
+        });
+  
+        return res.status(201).json({
+          message: "User registered successfully",
+          userId: user._id,
+          email: user.email,
+          isNewUser: true,
+        });
+        }
+      else{
+        // Existing user → login
+        return res.status(200).json({
+            message: "Login successful",
+            userId: user._id,
+            email: user.email,
+            isNewUser: false,
+        });
+      }
+     
+  
+    } catch (error) {
+      console.error("Google login error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findOne({ email: decoded.email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+  };
+  const checkEmail = async (req, res) => {
+    try {
+      const { email } = req.body;
+  
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+  
+      const user = await User.findOne({ email,authType:"Email" });
+  
+      if (user) {
+        return res.status(200).json({ exists: true });
+      } else {
+        return res.status(200).json({ exists: false });
+      }
+    } catch (err) {
+      console.error("Check email error:", err);
+      return res.status(500).json({ message: "Internal server error" });
     }
-
-    if (user.status === "Active") {
-      return res.status(400).json({ message: "Email already verified" });
-    }
-
-    user.status = "Active";
-    await user.save();
-
-    res.json({ message: "Email verified successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Invalid or expired token" });
-  }
-};
-
+  };
 module.exports = {
   register,
   login,
@@ -302,5 +362,7 @@ module.exports = {
   updateUser,
   deleteUser, 
   verifyEmail,
-  updatePassword
+  updatePassword,
+  googleLogin,
+  checkEmail
 };

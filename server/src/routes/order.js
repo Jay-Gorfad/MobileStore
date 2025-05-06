@@ -3,20 +3,22 @@ const router = express.Router();
 const orderController = require('../controllers/order.controller.js');
 
 // Add an order
-router.post('/orders', orderController.addOrder);
+router.post('/', orderController.addOrder);
+router.post('/checkout', orderController.checkout);
 
 // Get multiple orders (with optional deleted status filter)
-router.get('/orders', orderController.getOrders);
+router.get('/', orderController.getOrders);
 
 // Mark an order as deleted
-router.patch('/orders/:orderId/delete', orderController.markOrderAsDeleted);
+router.patch('/:orderId/delete', orderController.markOrderAsDeleted);
 
 // Get only non-deleted orders
-router.get('/orders/active', orderController.getActiveOrders);
+router.get('/active', orderController.getActiveOrders);
 
 // Get a single order by ID
-router.get('/orders/:orderId', orderController.getOrderById);
+router.get('/:orderId', orderController.getOrderById);
 router.get("/has-purchased/:userId/:productId", orderController.hasUserPurchasedProduct);
 
+router.get("/user/:userId", orderController.getOrdersByUserId);
 
 module.exports = router;

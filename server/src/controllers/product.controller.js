@@ -2,6 +2,7 @@ const Product = require("../models/Product");
 const { uploadImage, deleteImage } = require("../utils/cloudinary");
 const fs = require("fs");
 const Review = require('../models/Review');
+const OrderItem = require("../models/OrderItem");
 
 // Get single product by ID with average rating
 exports.getProductById = async (req, res) => {
@@ -121,6 +122,109 @@ exports.getAllProducts = async (req, res) => {
       res.status(500).json({ error: "Failed to fetch products" });
     }
   };
+  
+exports.getTrendingProducts = async (req, res) => {
+  try {
+    // Step 1: Aggregate sales count from OrderItem
+    const salesStats = await OrderItem.aggregate([
+      {
+        $group: {
+          _id: "$productId",
+          salesCount: { $sum: "$quantity" }
+        }
+      },
+      { $sort: { salesCount: -1 } },
+      { $limit: 8 }
+    ]);
+
+    const topProductIds = salesStats.map(item => item._id);
+
+    // Step 2: Get product details
+    const products = await Product.find({ _id: { $in: topProductIds }, isActive: true })
+      .populate("categoryId");
+
+    // Step 3: Get review stats
+    const reviewStats = await Review.aggregate([
+      { $match: { productId: { $in: topProductIds } } },
+      {
+        $group: {
+          _id: "$productId",
+          avgRating: { $avg: "$rating" },
+          totalReviews: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const reviewMap = {};
+    reviewStats.forEach(stat => {
+      reviewMap[stat._id.toString()] = {
+        avgRating: stat.avgRating.toFixed(1),
+        totalReviews: stat.totalReviews
+      };
+    });
+
+    // Step 4: Enrich products
+    const enriched = products.map(product => {
+      const stats = reviewMap[product._id.toString()] || { avgRating: "0.0", totalReviews: 0 };
+      return {
+        ...product.toObject(),
+        averageRating: stats.avgRating,
+        totalReviews: stats.totalReviews
+      };
+    });
+
+    res.status(200).json(enriched);
+  } catch (err) {
+    console.error("Fetch trending products error:", err);
+    res.status(500).json({ error: "Failed to fetch trending products" });
+  }
+};
+exports.getLatestProducts = async (req, res) => {
+  try {
+    // Step 1: Get latest products
+    const products = await Product.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(8)
+      .populate("categoryId");
+
+    const productIds = products.map(p => p._id);
+
+    // Step 2: Get review stats
+    const reviewStats = await Review.aggregate([
+      { $match: { productId: { $in: productIds } } },
+      {
+        $group: {
+          _id: "$productId",
+          avgRating: { $avg: "$rating" },
+          totalReviews: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const reviewMap = {};
+    reviewStats.forEach(stat => {
+      reviewMap[stat._id.toString()] = {
+        avgRating: stat.avgRating.toFixed(1),
+        totalReviews: stat.totalReviews
+      };
+    });
+
+    // Step 3: Enrich products
+    const enriched = products.map(product => {
+      const stats = reviewMap[product._id.toString()] || { avgRating: "0.0", totalReviews: 0 };
+      return {
+        ...product.toObject(),
+        averageRating: stats.avgRating,
+        totalReviews: stats.totalReviews
+      };
+    });
+
+    res.status(200).json(enriched);
+  } catch (err) {
+    console.error("Fetch latest products error:", err);
+    res.status(500).json({ error: "Failed to fetch latest products" });
+  }
+};
 
 
 // Update product by ID
@@ -193,3 +297,53 @@ exports.deleteProduct = async (req, res) => {
     res.status(400).json({ error: "Failed to delete product" });
   }
 };
+exports.getProductsByCategoryId = async (req, res) => {
+    try {
+      const { categoryId } = req.params;
+  
+      // Step 1: Get all active products for the given category
+      const products = await Product.find({ categoryId, isActive: true });
+  
+      if (products.length === 0) {
+        return res.status(404).json({ error: "No products found in this category" });
+      }
+  
+      const productIds = products.map(p => p._id);
+  
+      // Step 2: Get aggregated review data
+      const reviewStats = await Review.aggregate([
+        { $match: { productId: { $in: productIds } } },
+        {
+          $group: {
+            _id: "$productId",
+            avgRating: { $avg: "$rating" },
+            totalReviews: { $sum: 1 },
+          },
+        },
+      ]);
+  
+      const reviewMap = {};
+      reviewStats.forEach(stat => {
+        reviewMap[stat._id.toString()] = {
+          avgRating: stat.avgRating.toFixed(1),
+          totalReviews: stat.totalReviews,
+        };
+      });
+  
+      // Step 3: Enrich and respond
+      const enriched = products.map(product => {
+        const stats = reviewMap[product._id.toString()] || { avgRating: "0.0", totalReviews: 0 };
+        return {
+          ...product.toObject(),
+          averageRating: stats.avgRating,
+          totalReviews: stats.totalReviews,
+        };
+      });
+  
+      res.status(200).json(enriched);
+    } catch (err) {
+      console.error("Fetch products by category error:", err);
+      res.status(500).json({ error: "Failed to fetch products by category" });
+    }
+  };
+  
