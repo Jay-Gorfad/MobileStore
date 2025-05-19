@@ -1,230 +1,313 @@
-import React, { useState } from "react";
+// src/components/Cart.js
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
+
+const SHIPPING_CHARGE = 50;
 
 const Cart = () => {
-	const shippingCharge = 50;
-	const subtotal = 139000;
-	const total = subtotal + shippingCharge;
+  /* ------------------------------------------------------------------ */
+  /*  Context & state                                                   */
+  /* ------------------------------------------------------------------ */
+  const { cartCount, updateCartCount } = useAuth();
+  const [items, setItems] = useState([]);          // cart lines from API
+  const [offers, setOffers] = useState([]);        // active offers from API
+  const [appliedOffer, setAppliedOffer] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
-	const [cart, setCart] = useState([
-		{
-			id: 1,
-			name: "IPhone 15 Pro Max",
-			price: 139000,
-			image: "img/items/products/67409349bfcac_71yzJoE7WlL._SX679_.jpg",
-			quantity: 1,
-		},
-		{
-			id: 2,
-			name: "Samsung Galaxy S23 Ultra",
-			price: 129000,
-			image: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
-			quantity: 1,
-		},
-		{
-			id: 3,
-			name: "Oppo A3x",
-			price: 16999,
-			image: "img/items/products/671874f14018foppoa3x.jpg",
-			quantity: 1,
-		},
-	]);
+  /* ------------------------------------------------------------------ */
+  /*  Fetch cart & offers on mount                                      */
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user?._id) {
+          toast.error("User not found, please log in again.");
+          return;
+        }
 
-	const handleQuantityChange = (id, amount) => {
-		setCart((prevCart) =>
-			prevCart.map((item) =>
-				item.id === id
-					? { ...item, quantity: Math.max(1, item.quantity + amount) }
-					: item
-			)
-		);
-	};
+        /* ---- cart -------------------------------------------------- */
+        const cartRes = await axios.get(`http://localhost:8000/cart/${user._id}`);
+        setItems(cartRes.data.items || []);
+        updateCartCount(cartRes.data.items?.length || 0);
 
-	return (
-		<div className="container py-5">
-			<div className="cart-content mx-auto" style={{ maxWidth: '800px' }}>
-				<div className="text-center mb-5">
-					<h2 className="fw-bold mb-2">Shopping Cart</h2>
-					<p className="text-muted">Review and manage your items</p>
-				</div>
+        /* ---- offers ------------------------------------------------ */
+        const offerRes = await axios.get("http://localhost:8000/offers");
+        setOffers(offerRes.data.filter((o) => o.activeStatus));
 
-				{cart.length > 0 ? (
-					<>
-						<div className="card shadow-sm mb-4">
-							{cart.map((product) => (
-								<CartItem
-									key={product.id}
-									product={product}
-									onQuantityChange={handleQuantityChange}
-								/>
-							))}
-						</div>
-						<CartActions />
-						<CartSummary
-							subtotal={subtotal}
-							shippingCharge={shippingCharge}
-							total={total}
-						/>
-					</>
-				) : (
-					<div className="text-center py-5">
-						<i className="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
-						<h5 className="text-muted">Your cart is empty</h5>
-						<Link to="/shop" className="btn btn-primary mt-3">
-							Continue Shopping
-						</Link>
-					</div>
-				)}
-			</div>
-		</div>
-	);
+        /* ---- restore offer from session, if any -------------------- */
+        const stored = sessionStorage.getItem("appliedOffer");
+        if (stored) tryApplyOffer(JSON.parse(stored), cartRes.data.items || []);
+      } catch (err) {
+        toast.error("Failed to load cart / offers");
+        console.error(err);
+      }
+    };
+
+    fetchAll();
+  }, [updateCartCount]);
+
+  /* ------------------------------------------------------------------ */
+  /*  Helpers                                                           */
+  /* ------------------------------------------------------------------ */
+  const lineSubtotal = (item) => {
+    const base = parseFloat(item.productId.salePrice) || 0;
+    const disc = parseFloat(item.productId.discount) || 0;
+    const net  = base - (base * disc) / 100;
+    return net * item.quantity;
+  };
+
+  const cartSubtotal = items.reduce((t, it) => t + lineSubtotal(it), 0);
+
+  const recalcDiscount = (offer, _items = items) => {
+    if (!_items.length) return 0;
+    const sub = _items.reduce((t, it) => t + lineSubtotal(it), 0);
+    if (sub < offer.minimumOrder) return 0;
+    const raw = sub * (offer.discount / 100);
+    return Math.min(raw, offer.maxDiscount);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Offer actions                                                     */
+  /* ------------------------------------------------------------------ */
+  const tryApplyOffer = (offer, _items = items) => {
+    const d = recalcDiscount(offer, _items);
+    if (d === 0) {
+      toast.error(`This offer requires a minimum purchase of ₹${offer.minimumOrder}`);
+      return;
+    }
+    setAppliedOffer(offer);
+    setDiscountAmount(d);
+    sessionStorage.setItem("appliedOffer", JSON.stringify(offer));
+    toast.success("Offer applied successfully!");
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Quantity change                                                   */
+  /* ------------------------------------------------------------------ */
+  const changeQty = async (productId, delta) => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const current = items.find((i) => i.productId._id === productId);
+    if (!current) return;
+
+    const newQty = Math.max(1, current.quantity + delta);
+
+    try {
+      await axios.put(`http://localhost:8000/cart/${user._id}`, {
+        productId,
+        quantity: newQty,
+      });
+
+      const updated = items.map((it) =>
+        it.productId._id === productId ? { ...it, quantity: newQty } : it
+      );
+      setItems(updated);
+      updateCartCount(updated.length);
+      toast.success("Cart updated");
+      if (appliedOffer) setDiscountAmount(recalcDiscount(appliedOffer, updated));
+    } catch {
+      toast.error("Failed to update quantity");
+    }
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Remove line                                                       */
+  /* ------------------------------------------------------------------ */
+  const removeLine = async (productId) => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    try {
+      await axios.delete(`http://localhost:8000/cart/${user._id}`, {
+        data: { productId },
+      });
+      const filtered = items.filter((i) => i.productId._id !== productId);
+      setItems(filtered);
+      updateCartCount(filtered.length);
+      toast.success("Product removed");
+      if (appliedOffer) setDiscountAmount(recalcDiscount(appliedOffer, filtered));
+    } catch {
+      toast.error("Failed to remove product");
+    }
+  };
+
+  const total = cartSubtotal - discountAmount + SHIPPING_CHARGE;
+
+  /* ------------------------------------------------------------------ */
+  /*  Render                                                            */
+  /* ------------------------------------------------------------------ */
+  return (
+    <div className="container py-5">
+      <div className="cart-content mx-auto" style={{ maxWidth: 800 }}>
+        <div className="text-center mb-5">
+          <h2 className="fw-bold mb-2">Shopping Cart</h2>
+          <p className="text-muted">Review and manage your items</p>
+        </div>
+
+        {/* ----------------- main content ---------------------------- */}
+        {items.length === 0 ? (
+          <EmptyCart />
+        ) : (
+          <>
+            {/* cart lines */}
+            <div className="card shadow-sm mb-4">
+              {items.map((line) => (
+                <CartLine
+                  key={line.productId._id}
+                  line={line}
+                  onQty={changeQty}
+                  onRemove={removeLine}
+                />
+              ))}
+            </div>
+
+            {/* offers + summary */}
+            <OfferList offers={offers} onApply={tryApplyOffer} applied={appliedOffer} />
+            <Summary
+              subtotal={cartSubtotal}
+              shipping={SHIPPING_CHARGE}
+              discount={discountAmount}
+              total={total}
+              appliedOffer={appliedOffer}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
-const CartItem = ({ product, onQuantityChange }) => {
-	const handleDelete = () => {
-		alert("Product removed from cart!");
-	};
+/* ====================================================================== */
+/*  PRESENTATIONAL SUB‑COMPONENTS                                         */
+/* ====================================================================== */
 
-	return (
-		<div className="card-body border-bottom p-4">
-			<div className="row align-items-center">
-				<div className="col-md-3 col-4">
-					<img
-						src={product.image}
-						alt={product.name}
-						className="img-fluid rounded"
-					/>
-				</div>
-				<div className="col-md-9 col-8">
-					<div className="d-flex justify-content-between align-items-start mb-2">
-						<h6 className="fw-medium mb-0">{product.name}</h6>
-						<button
-							className="btn btn-link text-danger p-0"
-							onClick={handleDelete}
-						>
-							<i className="fas fa-trash"></i>
-						</button>
-					</div>
-					<div className="text-muted small mb-2">₹{product.price}</div>
-					<div className="d-flex align-items-center flex-sm-nowrap flex-wrap">
-						<div className="input-group input-group-sm" style={{ width: '120px' }}>
-							<button
-								className="btn btn-outline-secondary"
-								onClick={() => onQuantityChange(product.id, -1)}
-							>
-								<i className="fas fa-minus"></i>
-							</button>
-							<input
-								type="text"
-								className="form-control text-center"
-								value={product.quantity}
-								readOnly
-							/>
-							<button
-								className="btn btn-outline-secondary"
-								onClick={() => onQuantityChange(product.id, 1)}
-							>
-								<i className="fas fa-plus"></i>
-							</button>
-						</div>
-						<div className="ms-auto fw-medium">
-							₹{product.price * product.quantity}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+const EmptyCart = () => (
+  <div className="text-center py-5">
+    <i className="fas fa-shopping-cart fa-3x text-muted mb-3" />
+    <h5 className="text-muted">Your cart is empty</h5>
+    <Link to="/shop" className="btn btn-primary mt-3">
+      Continue Shopping
+    </Link>
+  </div>
+);
+
+const CartLine = ({ line, onQty, onRemove }) => {
+  const { productId: p, quantity } = line;
+
+  const sale = parseFloat(p.salePrice) || 0;
+  const disc = parseFloat(p.discount) || 0;
+  const net  = sale - (sale * disc) / 100;
+
+  return (
+    <div className="card-body border-bottom p-4">
+      <div className="row align-items-center">
+        {/* image */}
+        <div className="col-md-3 col-4">
+          <img src={p.productImage} alt={p.productName} className="img-fluid rounded" />
+        </div>
+
+        {/* details */}
+        <div className="col-md-9 col-8">
+          <div className="d-flex justify-content-between align-items-start mb-2">
+            <h6 className="fw-medium mb-0">{p.productName}</h6>
+            <button className="btn btn-link text-danger p-0" onClick={() => onRemove(p._id)}>
+              <i className="fas fa-trash" />
+            </button>
+          </div>
+
+          <div className="text-muted small mb-2">₹{net.toFixed(2)}</div>
+
+          <div className="d-flex align-items-center flex-sm-nowrap flex-wrap">
+            <div className="input-group input-group-sm" style={{ width: 120 }}>
+              <button className="btn btn-outline-secondary" onClick={() => onQty(p._id, -1)}>
+                <i className="fas fa-minus" />
+              </button>
+              <input
+                type="text"
+                readOnly
+                className="form-control text-center"
+                value={quantity}
+              />
+              <button className="btn btn-outline-secondary" onClick={() => onQty(p._id, 1)}>
+                <i className="fas fa-plus" />
+              </button>
+            </div>
+            <div className="ms-auto fw-medium">₹{(net * quantity).toFixed(2)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-const CartActions = () => {
-	const [offerCode, setOfferCode] = useState("");
-	const [error, setError] = useState("");
+const OfferList = ({ offers, onApply, applied }) => (
+  <div className="card shadow-sm mb-4">
+    <div className="card-body p-4">
+      <h5 className="mb-3">Available Offers</h5>
+      {!offers.length ? (
+        <div className="alert alert-warning m-0">No active offers available.</div>
+      ) : (
+        <div className="list-group shadow-sm">
+          {offers.map((o) => {
+            const isApplied = applied && applied.offerCode === o.offerCode;
+            return (
+              <div
+                key={o._id}
+                className="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+              >
+                <div className="me-3">
+                  <span className="badge bg-primary me-2">{o.offerCode}</span>
+                  <span className="text-muted">
+                    {o.discount}% off on orders over ₹{o.minimumOrder}
+                  </span>
+                </div>
+                {isApplied ? (
+                  <span className="badge bg-success">Applied</span>
+                ) : (
+                  <button
+                    className="btn btn-outline-success btn-sm"
+                    onClick={() => onApply(o)}
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+);
 
-	const handleApply = (e) => {
-		e.preventDefault();
-		if (!validateOfferCode()) return;
-		alert("Offer code applied successfully!");
-	};
+const Summary = ({ subtotal, shipping, discount, total, appliedOffer }) => (
+  <div className="card shadow-sm">
+    <div className="card-body p-4">
+      <h5 className="card-title mb-4">Order Summary</h5>
 
-	const handleChange = (e) => {
-		setOfferCode(e.target.value);
-		validateOfferCode(e.target.value);
-	};
+      <Row label="Subtotal" value={subtotal} />
+      {appliedOffer && <Row label={`Offer (${appliedOffer.offerCode})`} value={-discount} />}
+      <Row label="Shipping" value={shipping} />
 
-	const validateOfferCode = (code = offerCode) => {
-		if (!code.trim()) {
-			setError("Please enter an offer code!");
-			return false;
-		}
-		setError("");
-		return true;
-	};
+      <hr />
 
-	return (
-		<div className="card shadow-sm mb-4">
-			<div className="card-body p-4">
-				<form onSubmit={handleApply}>
-					<div className="row g-2">
-						<div className="col">
-							<input
-								type="text"
-								className={`form-control ${error ? 'is-invalid' : ''}`}
-								placeholder="Enter offer code"
-								value={offerCode}
-								onChange={handleChange}
-							/>
-							{error && <div className="invalid-feedback">{error}</div>}
-						</div>
-						<div className="col-auto">
-							<button 
-								type="submit" 
-								className="btn btn-primary px-4"
-								disabled={!offerCode || error}
-							>
-								Apply
-							</button>
-						</div>
-					</div>
-				</form>
-			</div>
-		</div>
-	);
-};
+      <Row label="Total" value={total} bold />
+      <Link to="/checkout" className="btn btn-primary w-100 py-3 fw-medium mt-3">
+        Proceed to Checkout
+      </Link>
+      <Link to="/shop" className="btn btn-link w-100 text-muted mt-2">
+        Continue Shopping
+      </Link>
+    </div>
+  </div>
+);
 
-const CartSummary = ({ subtotal, shippingCharge, total }) => {
-	return (
-		<div className="card shadow-sm">
-			<div className="card-body p-4">
-				<h5 className="card-title mb-4">Order Summary</h5>
-				<div className="d-flex justify-content-between mb-3">
-					<span className="text-muted">Subtotal</span>
-					<span className="fw-medium">₹{subtotal}</span>
-				</div>
-				<div className="d-flex justify-content-between mb-3">
-					<span className="text-muted">Shipping</span>
-					<span className="fw-medium">₹{shippingCharge}</span>
-				</div>
-				<hr />
-				<div className="d-flex justify-content-between mb-4">
-					<span className="fw-medium">Total</span>
-					<span className="fw-bold">₹{total}</span>
-				</div>
-				<Link
-					to="/checkout"
-					className="btn btn-primary w-100 py-3 fw-medium"
-				>
-					Proceed to Checkout
-				</Link>
-				<Link
-					to="/shop"
-					className="btn btn-link w-100 text-muted mt-2"
-				>
-					Continue Shopping
-				</Link>
-			</div>
-		</div>
-	);
-};
+const Row = ({ label, value, bold }) => (
+  <div className="d-flex justify-content-between mb-3">
+    <span className={bold ? "fw-medium" : "text-muted"}>{label}</span>
+    <span className={bold ? "fw-bold" : "fw-medium"}>₹{value.toFixed(2)}</span>
+  </div>
+);
 
 export default Cart;

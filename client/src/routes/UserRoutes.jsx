@@ -45,7 +45,7 @@ const UserRoutes = () => {
             <Route path="checkout" element={<Checkout />} />
             <Route path="order-confirm" element={<OrderConfirmation />} />
             <Route path="order-history" element={<OrderHistory />} />
-            <Route path="order" element={<OrderDetails />} />
+            <Route path="order/:orderId" element={<OrderDetails />} />
 
         </Route>
   </Routes>

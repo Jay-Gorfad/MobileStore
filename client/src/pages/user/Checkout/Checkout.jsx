@@ -1,298 +1,280 @@
-import React, { useState } from "react";
-import BillingAddressForm from "./BillingAddressForm";
+// src/pages/user/Checkout.jsx
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
+import BillingAddressForm from "./BillingAddressForm";
 
 const Checkout = () => {
-	const [showBillingForm, setShowBillingForm] = useState(false);
-	const [selectedAddress, setSelectedAddress] = useState(null);
-	const [selectedPayment, setSelectedPayment] = useState(null);
-    const [errors, setErrors] = useState({});
-    const navigate = useNavigate();
+  /* ───────────────────────── state ──────────────────────────────── */
+  const [addresses, setAddresses]   = useState([]);
+  const [cartItems, setCartItems]   = useState([]);
+  const [selected, setSelected]     = useState(null);
+  const [showForm, setShowForm]     = useState(false);
+  const [errors, setErrors]         = useState({});
+  const [offer, setOffer]           = useState(null);
+  const [discount, setDiscount]     = useState(0);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        let validationErrors = {};
-        if (!selectedAddress) validationErrors.address = "Please select an address.";
-        if (!selectedPayment) validationErrors.payment = "Please select a payment method.";
-        
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
+  const user    = JSON.parse(localStorage.getItem("user"));
+  const userId  = user?._id;
+  const nav     = useNavigate();
 
-        setErrors({});
-        navigate(`/order-confirm`);
-    };
+  /* ───────────────────────── effects ────────────────────────────── */
+  useEffect(() => {
+    if (!userId) return;
+    fetchAddresses(userId);
+    fetchCart(userId);
+  }, [userId]);
 
-	const addresses = [
-		{
-			id: 1,
-			fullName: "Jay Gorfad",
-			phone: "7600242425",
-			address: "Kothariya Main Road",
-			city: "Rajkot",
-			state: "Gujarat",
-			pincode: "360002",
-		},
-		{
-			id: 2,
-			fullName: "Prince Bhatt",
-			phone: "9865321010",
-			address: "Kothariya Main Road",
-			city: "Rajkot",
-			state: "Gujarat",
-			pincode: "360001",
-		},
-	];
+  useEffect(() => {
+    const raw = sessionStorage.getItem("appliedOffer");
+    if (raw && cartItems.length) applyOffer(JSON.parse(raw));
+  }, [cartItems]);
 
-	const toggleBillingForm = () => {
-		setShowBillingForm(!showBillingForm);
-	};
+  /* ───────────────────────── helpers ────────────────────────────── */
+  const fetchAddresses = async (uid) => {
+    try {
+      const { data } = await axios.get(`http://localhost:8000/addresses/user/${uid}`);
+      setAddresses(data || []);
+    } catch (e) { console.error(e); }
+  };
 
-	return (
-		<div className="bg-light min-vh-100 py-5">
-			<div className="container">
-                <nav aria-label="breadcrumb" className="mb-4">
-                    <ol className="breadcrumb">
-                        <li className="breadcrumb-item">
-                            <Link to="/" className="text-decoration-none text-muted">Home</Link>
-                        </li>
-                        <li className="breadcrumb-item">
-                            <Link to="/cart" className="text-decoration-none text-muted">Cart</Link>
-                        </li>
-                        <li className="breadcrumb-item active" aria-current="page">Checkout</li>
-                    </ol>
-                </nav>
+  const fetchCart = async (uid) => {
+    try {
+      const { data } = await axios.get(`http://localhost:8000/cart/${uid}`);
+      setCartItems(data.items || []);
+    } catch (e) { console.error(e); }
+  };
 
-				<div className="row g-4">
-					<div className="col-lg-7">
-						{showBillingForm && (
-                            <div className="card shadow-sm mb-4">
-                                <div className="card-body">
-                                    <BillingAddressForm />
-                                </div>
-                            </div>
-                        )}
+  const applyOffer = (o) => {
+    const sub = cartItems.reduce(
+      (t, it) =>
+        t +
+        it.productId.salePrice * (1 - it.productId.discount / 100) * it.quantity,
+      0
+    );
+    if (sub >= o.minimumOrder) {
+      const raw = (sub * o.discount) / 100;
+      setOffer(o);
+      setDiscount(Math.min(raw, o.maxDiscount));
+      sessionStorage.setItem("appliedOffer", JSON.stringify(o));
+    } else {
+      setOffer(null);
+      setDiscount(0);
+    }
+  };
 
-						<div className="card shadow-sm">
-							<div className="card-body">
-								<div className="d-flex justify-content-between align-items-center mb-4">
-									<h5 className="card-title mb-0">Shipping Address</h5>
-									<button
-										type="button"
-										onClick={toggleBillingForm}
-										className="btn btn-primary btn-sm"
-									>
-										Add New Address
-									</button>
-								</div>
+  const sub   = cartItems.reduce(
+    (t, i) =>
+      t + i.productId.salePrice * (1 - i.productId.discount / 100) * i.quantity,
+    0
+  );
+  const ship  = 50;
+  const total = sub + ship - discount;
 
-								<AddressList 
-                                    addresses={addresses} 
-                                    setSelectedAddress={setSelectedAddress} 
-                                    selectedAddress={selectedAddress} 
-                                    errors={errors}
-                                    setErrors={setErrors}
-                                />
-                                {errors.address && 
-                                    <div className="alert alert-danger py-2 mt-3">{errors.address}</div>
-                                }
-							</div>
-						</div>
-					</div>
+  /* ──────────────────────── razorpay flow ───────────────────────── */
+  const placeOrder = async () => {
+    if (!selected) {
+      setErrors({ address: "Please select an address." });
+      return;
+    }
 
-					<div className="col-lg-5">
-						<CheckoutSummary 
-                            setSelectedPayment={setSelectedPayment} 
-                            selectedPayment={selectedPayment}
-                            handleSubmit={handleSubmit}
-                            errors={errors}
-                            setErrors={setErrors}
+    try {
+      const ck = await axios.get(`http://localhost:8000/orders/check-stock/${userId}`);
+      if (ck.status === 400) {
+        toast.error(ck.data.message);
+        return;
+      }
+
+      const { data } = await axios.post("http://localhost:8000/payment/create-order", {
+        amount: total,
+      });
+      if (!data.success) { toast.error("Payment order failed"); return; }
+
+      const rzp = new window.Razorpay({
+        key: "rzp_test_mEljxG2Cvuw6qT",
+        order_id: data.order.id,
+        amount:   data.order.amount,
+        currency: data.order.currency,
+        name: "Mobitrendz",
+        description: "Purchase",
+        prefill: {
+          name: addresses.find((a) => a._id === selected)?.fullName,
+          email: user.email,
+          contact: addresses.find((a) => a._id === selected)?.phone,
+        },
+        theme: { color: "#0d6efd" },
+        handler: async (res) => {
+          try {
+            const conf = await axios.post("http://localhost:8000/orders/checkout", {
+              userId,
+              addressId: selected,
+              promoCodeId: offer?._id || null,
+              razorpayOrderId: res.razorpay_order_id,
+              razorpayPaymentId: res.razorpay_payment_id,
+              razorpaySignature: res.razorpay_signature,
+            });
+            if (conf.status === 201) {
+              toast.success("Order placed!");
+              nav("/order-history");
+            } else {
+              toast.error("Payment OK but order failed.");
+            }
+          } catch { toast.error("Server error after payment"); }
+        },
+        modal: { ondismiss: () => toast.info("Payment cancelled") },
+      });
+      rzp.open();
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Checkout error");
+    }
+  };
+
+  /* ───────────────────────── render ─────────────────────────────── */
+  return (
+    <div className="checkout-page pb-5">
+
+      {/* breadcrumb */}
+      <div className="bg-primary-subtle py-2 mb-4">
+        <div className="container d-flex align-items-center gap-2 small">
+          <Link to="/" className="text-primary text-decoration-none">Home</Link> /
+          <Link to="/cart" className="text-primary text-decoration-none">Cart</Link> /
+          <span className="text-primary fw-semibold">Checkout</span>
+        </div>
+      </div>
+
+      {/* stepper */}
+      <div className="container mb-5">
+        <ul className="d-flex justify-content-between list-unstyled stepper-blue">
+          {["Cart", "Address", "Payment", "Done"].map((s, i) => (
+            <li key={s} className={`step ${i <= 1 ? "active" : ""}`}>
+              <span className="circle">{i + 1}</span>
+              <span className="label">{s}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="container">
+
+        {/* ===== Addresses ===== */}
+        <section className="mb-5">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="text-primary">Delivery Address</h5>
+            <button
+              className="btn btn-outline-primary btn-sm"
+              onClick={() => setShowForm(!showForm)}
+            >
+              {showForm ? "Back" : "+ New Address"}
+            </button>
+          </div>
+
+          {showForm ? (
+            <BillingAddressForm
+              userId={userId}
+              fetchAddresses={fetchAddresses}
+              onClose={() => setShowForm(false)}
+            />
+          ) : (
+            <>
+              <div className="row g-3">
+                {addresses.map((a) => {
+                  const active = selected === a._id;
+                  return (
+                    <div className="col-md-6" key={a._id}>
+                      <label
+                        className={`address-tile border rounded p-3 d-flex gap-3 align-items-start ${active ? "border-primary shadow-sm" : "border-300"}`}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <input
+                          type="radio"
+                          className="form-check-input mt-1"
+                          checked={active}
+                          onChange={() => {
+                            setSelected(a._id);
+                            setErrors((e) => ({ ...e, address: "" }));
+                          }}
                         />
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+                        <div>
+                          <strong className="d-block">{a.fullName}</strong>
+                          <small className="d-block text-muted">
+                            {a.address}, {a.city}, {a.state} {a.pincode}
+                          </small>
+                          <small className="text-muted">+91 {a.phone}</small>
+                        </div>
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+              {errors.address && (
+                <p className="text-danger mt-2">{errors.address}</p>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* ===== Order Summary ===== */}
+        <section className="mb-5">
+          <div className="card border-primary">
+            <div className="card-header bg-primary text-white">
+              <h5 className="mb-0">Order Summary</h5>
+            </div>
+            <div className="card-body">
+
+              {cartItems.map((it) => (
+                <div key={it._id} className="d-flex align-items-center mb-3">
+                  <img
+                    src={it.productId.productImage}
+                    alt={it.productId.productName}
+                    className="rounded me-3"
+                    style={{ width: 64, height: 64, objectFit: "cover" }}
+                  />
+                  <div className="flex-grow-1">
+                    <p className="mb-0 fw-medium small">{it.productId.productName}</p>
+                    <small className="text-muted">× {it.quantity}</small>
+                  </div>
+                  <div className="fw-medium small">
+                    ₹{(
+                      it.productId.salePrice *
+                      (1 - it.productId.discount / 100) *
+                      it.quantity
+                    ).toFixed(2)}
+                  </div>
+                </div>
+              ))}
+
+              <hr />
+
+              <CostRow label="Subtotal" value={sub} />
+              <CostRow label="Shipping" value={ship} />
+              {discount > 0 && <CostRow label="Discount" value={-discount} danger />}
+              <hr />
+              <CostRow label="Total" value={total} bold />
+
+              <button
+                className="btn btn-primary w-100 mt-3 py-2"
+                onClick={placeOrder}
+              >
+                Pay &amp; Place Order
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 };
 
-const AddressList = ({ addresses, setSelectedAddress, selectedAddress, errors, setErrors }) => {
-	const handleAddressChange = (event) => {
-        const selectedAddressId = Number(event.target.value);
-		setSelectedAddress(selectedAddressId);
-        if(selectedAddressId < 0){
-            setErrors({...errors, address:"Please select an address"});
-        } else {
-            setErrors({...errors, address:""});
-        }
-	};
-
-	return (
-		<div className="row g-3">
-			{addresses.map((address) => (
-				<div className="col-md-6" key={address.id}>
-					<div className={`card h-100 ${selectedAddress === address.id ? 'border-primary' : 'border'}`}>
-						<div className="card-body">
-							<div className="form-check">
-								<input
-									type="radio"
-									id={`address-${address.id}`}
-									name="shipping-address"
-									value={address.id}
-									className="form-check-input"
-									checked={selectedAddress === address.id}
-									onChange={handleAddressChange}
-								/>
-								<label 
-                                    className="form-check-label" 
-                                    htmlFor={`address-${address.id}`}
-                                    style={{cursor: "pointer"}}
-                                >
-									<strong>{address.fullName}</strong><br/>
-									{address.phone}<br/>
-									{address.address}<br/>
-									{address.city}, {address.state}<br/>
-									{address.pincode}
-								</label>
-							</div>
-						</div>
-					</div>
-				</div>
-			))}
-		</div>
-	);
-};
-
-const CheckoutSummary = ({setSelectedPayment, selectedPayment, handleSubmit, errors, setErrors}) => {
-	const products = [
-		{
-			id: 1,
-			productName: "IPhone 15 Pro Max",
-			price: 139000,
-			productImage: "img/items/products/67409349bfcac_71yzJoE7WlL._SX679_.jpg",
-			quantity: 1,
-		},
-		{
-			id: 2,
-			productName: "Samsung Galaxy S23 Ultra",
-			price: 129000,
-			productImage: "img/items/products/670b6b6e1f2d1samsungs23ultra.jpg",
-			quantity: 1,
-		},
-		{
-			id: 3,
-			productName: "Oppo A3x",
-			price: 16999,
-			productImage: "img/items/products/671874f14018foppoa3x.jpg",
-			quantity: 1,
-		},
-	];
-
-	const subtotal = 139000.00;
-	const shippingCharge = 50.0;
-	const discountAmount = 100.0;
-	const total = subtotal + shippingCharge - discountAmount;
-
-	const handlePaymentChange = (event) => {
-		setSelectedPayment(event.target.value);
-        if(event.target.value === ""){
-            setErrors({...errors, payment:"Please select a payment method"});
-        } else {
-            setErrors({...errors, payment:""});
-        }
-	};
-
-	return (
-		<div className="card shadow-sm">
-			<div className="card-body">
-				<h5 className="card-title mb-4">Order Summary</h5>
-
-				{products.map((product) => (
-					<div className="d-flex align-items-center mb-3" key={product.id}>
-						<img
-							src={product.productImage}
-							className="rounded"
-							style={{width: "60px", height: "60px", objectFit: "cover"}}
-							alt={product.productName}
-						/>
-						<div className="ms-3 flex-grow-1">
-							<h6 className="mb-0">{product.productName}</h6>
-							<small className="text-muted">Qty: {product.quantity}</small>
-						</div>
-						<div className="fw-bold">₹{product.price.toFixed(2)}</div>
-					</div>
-				))}
-
-				<hr/>
-
-				<div className="d-flex justify-content-between mb-2">
-					<span>Subtotal</span>
-					<span>₹{subtotal.toFixed(2)}</span>
-				</div>
-
-				<div className="d-flex justify-content-between mb-2">
-					<span>Shipping</span>
-					<span>₹{shippingCharge.toFixed(2)}</span>
-				</div>
-
-				{discountAmount > 0 && (
-					<div className="d-flex justify-content-between mb-2">
-						<span>Discount</span>
-						<span className="text-success">-₹{discountAmount.toFixed(2)}</span>
-					</div>
-				)}
-
-				<hr/>
-
-				<div className="d-flex justify-content-between mb-4">
-					<span className="fw-bold">Total</span>
-					<span className="fw-bold">₹{total.toFixed(2)}</span>
-				</div>
-
-				<div className="mb-4">
-					<h6 className="mb-3">Payment Method</h6>
-					<div className="form-check mb-2">
-						<input
-							type="radio"
-							id="cod"
-							name="payment"
-							value="COD"
-							className="form-check-input"
-							checked={selectedPayment === "COD"}
-							onChange={handlePaymentChange}
-						/>
-						<label className="form-check-label" htmlFor="cod">
-							Cash On Delivery
-						</label>
-					</div>
-					<div className="form-check">
-						<input
-							type="radio"
-							id="online"
-							name="payment"
-							value="Online"
-							className="form-check-input"
-							checked={selectedPayment === "Online"}
-							onChange={handlePaymentChange}
-						/>
-						<label className="form-check-label" htmlFor="online">
-							Online Payment
-						</label>
-					</div>
-					{errors.payment && 
-                        <div className="alert alert-danger py-2 mt-2">{errors.payment}</div>
-                    }
-				</div>
-
-				<button
-					className="btn btn-primary w-100"
-					onClick={handleSubmit}
-				>
-					Place Order
-				</button>
-			</div>
-		</div>
-	);
-};
+/* ───────────────── helper components ─────────────────────────────── */
+const CostRow = ({ label, value, bold, danger }) => (
+  <div className="d-flex justify-content-between mb-2">
+    <span className={bold ? "fw-bold" : "text-muted"}>{label}</span>
+    <span className={`fw-medium ${danger ? "text-danger" : "text-primary"}`}>
+      ₹{value.toFixed(2)}
+    </span>
+  </div>
+);
 
 export default Checkout;
+

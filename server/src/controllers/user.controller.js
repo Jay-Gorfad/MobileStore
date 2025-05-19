@@ -72,17 +72,36 @@ const login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // 🔒 Check if the account is Google-authenticated
+    if (user.authType === "Google") {
+      return res.status(400).json({
+        message: "This account is connected with Google. Please log in using Google Sign-In.",
+      });
+    }
+
+    // ✅ Check password for Email-based auth
     if (user.authType === "Email") {
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+      if (user.status === "Inactive") {
+            return res.status(404).json({ message: "User account is inactive" });
+        }
+          if (user.status === "Deleted") {
+            return res.status(404).json({ message: "User account is deleted, if want to recover contact admin" });
+        }
+
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
     res.json({ token, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // Send OTP
 const sendOtp = async (req, res) => {
@@ -305,6 +324,7 @@ const googleLogin = async (req, res) => {
         user = await User.create({
           email,
           authType, // Should be 'google'
+          status: "Active",
         });
   
         return res.status(201).json({

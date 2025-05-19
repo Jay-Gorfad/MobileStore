@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import axios from 'axios';
+import 'react-toastify/dist/ReactToastify.css';
 
-const BillingAddressForm = () => {
+const BillingAddressForm = ({ userId ,fetchAddresses}) => {
     const [formData, setFormData] = useState({
         billingFirstName: '',
         billingLastName: '',
@@ -12,47 +14,9 @@ const BillingAddressForm = () => {
         billingPinCode: '',
         billingPhone: ''
     });
+
     const [errors, setErrors] = useState({});
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevData => ({ ...prevData, [name]: value }));
-        setErrors(prevErrors => ({ ...prevErrors, [name]: validateField(name, value) }));
-    };
-
-    const validateField = (name, value) => {
-        if (!value.trim()) {
-            return `${getFieldLabel(name)} is required`;
-        }
-    
-        // Name, City, State: Only letters allowed, Min: 3, Max: 50
-        if (["billingFirstName", "billingLastName", "billingCity", "billingState"].includes(name)) {
-            if (!/^[A-Za-z\s]+$/.test(value)) {
-                return `${getFieldLabel(name)} should contain only letters`;
-            }
-            if (value.length < 3 || value.length > 50) {
-                return `${getFieldLabel(name)} must be between 3 and 50 characters`;
-            }
-        }
-    
-        // Street Address: Min 5, Max 100 characters
-        if (name === "billingAddress" && (value.length < 5 || value.length > 100)) {
-            return "Street Address must be between 5 and 100 characters";
-        }
-    
-        // Pin Code: Exactly 6 digits
-        if (name === "billingPinCode" && !/^\d{6}$/.test(value)) {
-            return "Pin Code must be exactly 6 digits";
-        }
-    
-        // Phone: Exactly 10 digits
-        if (name === "billingPhone" && !/^\d{10}$/.test(value)) {
-            return "Phone number must be exactly 10 digits";
-        }
-    
-        return null; // No errors
-    };
-    
     const getFieldLabel = (fieldName) => {
         const fieldLabels = {
             billingFirstName: "First Name",
@@ -65,108 +29,134 @@ const BillingAddressForm = () => {
         };
         return fieldLabels[fieldName] || "This field";
     };
-    
-    
-    const handleSubmit = (e) => {
+
+    const validateField = (name, value) => {
+        if (!value.trim()) return `${getFieldLabel(name)} is required`;
+
+        if (["billingFirstName", "billingLastName", "billingCity", "billingState"].includes(name)) {
+            if (!/^[A-Za-z\s]+$/.test(value)) return `${getFieldLabel(name)} should contain only letters`;
+            if (value.length < 3 || value.length > 50) return `${getFieldLabel(name)} must be between 3 and 50 characters`;
+        }
+
+        if (name === "billingAddress" && (value.length < 5 || value.length > 100)) {
+            return "Street Address must be between 5 and 100 characters";
+        }
+
+        if (name === "billingPinCode" && !/^\d{6}$/.test(value)) {
+            return "Pin Code must be exactly 6 digits";
+        }
+
+        if (name === "billingPhone" && !/^\d{10}$/.test(value)) {
+            return "Phone number must be exactly 10 digits";
+        }
+
+        return null;
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const newErrors = {};
-        
-        // Validate all fields
+
         Object.keys(formData).forEach(field => {
             const error = validateField(field, formData[field]);
-            if (error) {
-                newErrors[field] = error;
-            }
+            if (error) newErrors[field] = error;
         });
-    
-        // If there are errors, update state and return
+
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
+            toast.error("Please correct the highlighted fields.");
             return;
         }
-    
-        // No errors, clear previous errors and show success message
-        setErrors({});
-        toast.success('Billing details saved successfully!');
-    };
-    
-    
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     const newErrors = {};
-    //     Object.keys(formData).forEach(field => {
-    //         const error = validateField(field, formData[field]);
-    //         if (error) newErrors[field] = error;
-    //     });
 
-    //     if (newErrors.length > 0) {
-    //         setErrors(newErrors);
-    //         return;
-    //     }
-    //     setErrors({});
-    //     toast.success('Billing details saved successfully!');
-    // };
+        // Construct address object for API
+        const payload = {
+            userId, // passed as prop
+            fullName: `${formData.billingFirstName} ${formData.billingLastName}`,
+            address: formData.billingAddress + (formData.billingApartment ? `, ${formData.billingApartment}` : ''),
+            city: formData.billingCity,
+            state: formData.billingState,
+            pincode: Number(formData.billingPinCode),
+            phone: formData.billingPhone
+        };
+
+        try {
+            const res = await axios.post('http://localhost:8000/addresses/', payload);
+            toast.success('Billing address saved successfully!');
+            setFormData({
+                billingFirstName: '',
+                billingLastName: '',
+                billingAddress: '',
+                billingApartment: '',
+                billingCity: '',
+                billingState: '',
+                billingPinCode: '',
+                billingPhone: ''
+            });
+            fetchAddresses(userId);
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to save address. Please try again.');
+        }
+    };
 
     return (
-        <div >
-            <form id="billingForm" className="needs-validation" onSubmit={handleSubmit}>
-                <div className="card shadow-sm">
-                    <div className="card-body">
-                        <h2 className="card-title mb-4">Billing Details</h2>
-                        <div className="row g-3">
-                            {['billingFirstName', 'billingLastName', 'billingCity', 'billingState', 'billingPinCode', 'billingPhone'].map((field, index) => (
-                                <div className="col-md-6" key={index}>
-                                    <label className="form-label">
-                                        {getFieldLabel(field)}
-                                        <span className="text-danger">*</span>
-                                    </label>
-                                    <input 
-                                        name={field}
-                                        type="text"
-                                        className={`form-control ${errors[field] ? 'is-invalid' : ''}`}
-                                        placeholder={getFieldLabel(field)}
-                                        value={formData[field]}
-                                        onChange={handleChange}
-                                    />
-                                    {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
-                                </div>
-                            ))}
-                            <div className="col-12">
-                                <label className="form-label">
-                                    Street Address
-                                    <span className="text-danger">*</span>
-                                </label>
-                                <textarea 
-                                    name="billingAddress"
-                                    className={`form-control ${errors.billingAddress ? 'is-invalid' : ''}`}
-                                    rows="2"
-                                    placeholder="Street Address"
-                                    value={formData.billingAddress}
+        <>
+            <ToastContainer />
+            <form id="billingForm" className="billing-details form" onSubmit={handleSubmit}>
+                <div className="mb-4">
+                    <h2 className="mt-2">Billing Details</h2>
+                    <div className="row gx-2 gy-3">
+                        {['billingFirstName', 'billingLastName', 'billingCity', 'billingState', 'billingPinCode', 'billingPhone'].map((field, index) => (
+                            <div className="col-12 col-sm-6" key={index}>
+                                <label className="form-label d-block">{getFieldLabel(field)}<span className="required">*</span></label>
+                                <input
+                                    name={field}
+                                    type="text"
+                                    className="w-100"
+                                    placeholder={getFieldLabel(field)}
+                                    value={formData[field]}
                                     onChange={handleChange}
-                                ></textarea>
-                                {errors.billingAddress && <div className="invalid-feedback">{errors.billingAddress}</div>}
+                                />
+                                {errors[field] && <p className="error text-danger">{errors[field]}</p>}
                             </div>
-                            <div className="col-12">
-                                <label className="form-label">Apartment, Floor, etc. (Optional)</label>
-                                <textarea
-                                    name="billingApartment"
-                                    className="form-control"
-                                    rows="2"
-                                    placeholder="Apartment, Floor, etc."
-                                    value={formData.billingApartment}
-                                    onChange={handleChange}
-                                ></textarea>
-                            </div>
+                        ))}
+                        <div className="col-12">
+                            <label className="form-label d-block">Street Address<span className="required">*</span></label>
+                            <textarea
+                                name="billingAddress"
+                                className="w-100"
+                                rows="2"
+                                placeholder="Street Address"
+                                value={formData.billingAddress}
+                                onChange={handleChange}
+                            />
+                            {errors.billingAddress && <p className="error text-danger">{errors.billingAddress}</p>}
+                        </div>
+                        <div className="col-12">
+                            <label className="form-label d-block">Apartment, Floor, etc.<span className="required">*</span></label>
+                            <textarea
+                                name="billingApartment"
+                                className="w-100"
+                                rows="2"
+                                placeholder="Apartment, Floor, etc."
+                                value={formData.billingApartment}
+                                onChange={handleChange}
+                            />
+                              {errors.billingApartment && <p className="error text-danger">{errors.billingApartment}</p>}
                         </div>
                     </div>
-                    <div className="card-footer bg-transparent d-flex justify-content-end">
-                        <button type="submit" className="btn btn-primary">
-                            Save Address
-                        </button>
-                    </div>
+                </div>
+                <div className="d-flex justify-content-end">
+                    <input type="submit" value="Save Address" className="primary-btn js-filter-btn mt-2" />
                 </div>
             </form>
-        </div>
+        </>
     );
 };
 

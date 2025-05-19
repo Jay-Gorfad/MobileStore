@@ -1,10 +1,20 @@
-import React, { useState ,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext"; 
+import { toast } from "react-toastify";
+import { useAuth } from "../../contexts/AuthContext"; // ✅ Use context
 
 const Header = () => {
-	const { isLoggedIn, logout, user } = useAuth(); // ✅ Grab user from context
-	const [query, setQuery] = useState("");
+	const {
+		isLoggedIn,
+		logout,
+		user,
+		cartCount,
+		wishlistCount,
+		updateCartCount,
+		updateWishlistCount,
+		searchQuery,
+		setSearchQuery,
+	} = useAuth(); // ✅ Extended auth context
 	const [isNavCollapsed, setIsNavCollapsed] = useState(true);
 	const navigate = useNavigate();
 
@@ -41,9 +51,8 @@ const Header = () => {
 	};
 
 	const handleLogout = () => {
-		logout(); // ✅ Logout from context
-		//toast.success("You have been logged out successfully!");
-		alert("You have been logged out successfully!");
+		logout(); // ✅ Logout
+		toast.success("You have been logged out successfully!");
 		navigate("/");
 	};
 
@@ -84,8 +93,8 @@ const Header = () => {
 								className="search-input flex-sm-grow-0 flex-grow-1"
 								type="search"
 								placeholder="Search for items..."
-								value={query}
-								onChange={(e) => setQuery(e.target.value)}
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
 							/>
 							<button className="primary-btn search-button">
 								<i className="fa fa-search" aria-hidden="true"></i>
@@ -94,7 +103,7 @@ const Header = () => {
 
 						{isLoggedIn ? (
 							<div className="d-flex align-items-center justify-content-center mt-3 mt-lg-0">
-								<div className="dropdown profile-menu">
+								<div className="dropdown profile-menu me-3">
 									<a
 										className="nav-link dropdown-toggle d-flex align-items-center justify-content-center"
 										href="#"
@@ -103,7 +112,7 @@ const Header = () => {
 										aria-expanded="false"
 									>
 										<img
-											src={`${user?.profilePicture??'../img/users/default-img.png'}`}
+											src={user?.profilePicture || "img/users/default-img.png"}
 											alt="User"
 											style={{
 												width: "35px",
@@ -112,7 +121,7 @@ const Header = () => {
 												marginRight: "8px",
 											}}
 										/>
-										{user?.firstName || "User"} {/* ✅ Show dynamic user name */}
+										{user?.firstName || "User"}
 									</a>
 									<ul className="dropdown-menu dropdown-menu-end">
 										<li>
@@ -127,27 +136,20 @@ const Header = () => {
 									</ul>
 								</div>
 
-								<div className="d-flex justify-content-end align-items-center justify-content-sm-center w-100">
-	 									<Link
-	 										to="/wishlist"
-	 										className="icon-link"
-	 									>
-	 										<div className="icon me-1">
-	 											<i className="fa-solid fa-heart primary"></i>
-	 											<span className="badge-class bg-danger">
-	 												2
-	 											</span>
-	 										</div>
-	 									</Link>
-	 									<Link to="/cart" className="icon-link">
-	 										<div className="icon me-1">
-	 											<i className="fa-solid fa-cart-shopping primary"></i>
-	 											<span className="badge-class bg-danger">
-	 												3
-	 											</span>
-	 										</div>
-	 									</Link>
-	 	 	 								</div>
+								<div className="d-flex">
+									<Link to="/wishlist" className="icon-link me-2">
+										<div className="icon position-relative">
+											<i className="fa-regular fa-heart"></i>
+											<span className="badge-class">{wishlistCount}</span>
+										</div>
+									</Link>
+									<Link to="/cart" className="icon-link">
+										<div className="icon position-relative">
+											<i className="fa-solid fa-cart-shopping"></i>
+											<span className="badge-class">{cartCount}</span>
+										</div>
+									</Link>
+								</div>
 							</div>
 						) : (
 							<div className="d-flex">
