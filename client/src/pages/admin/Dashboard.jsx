@@ -1,14 +1,33 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaBox, FaShoppingCart, FaUsers } from "react-icons/fa";
+import { FaBox, FaShoppingCart, FaUsers,FaThLarge  } from "react-icons/fa";
 import OrderTable from "../../components/admin/OrderTable";
+import axios from "axios";
 
 const Dashboard = () => {
-  // Static data for now
-  const totalProducts = 120;
-  const totalOrders = 350;
-  const totalRevenue = 500000;
-  const totalUsers = 200;
+  const [stats, setStats] = useState({
+    totalActiveProducts: 0,
+    totalOrders: 0,
+    totalCategories: 0,
+    totalActiveUsers: 0
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/dashboard");
+        if (res.data.success) {
+          setStats(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard data", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const { totalActiveProducts, totalOrders, totalCategories, totalActiveUsers } = stats;
 
   return (
     <div>
@@ -24,7 +43,7 @@ const Dashboard = () => {
               <div className="card-body d-flex justify-content-between align-items-center">
                 <div>
                   <h5>Total Products</h5>
-                  <h2>{totalProducts}</h2>
+                  <h2>{totalActiveProducts}</h2>
                 </div>
                 <FaBox size={32} />
               </div>
@@ -47,13 +66,14 @@ const Dashboard = () => {
         </div>
 
         <div className="col-xl-3 col-md-6 mb-4">
-          <Link to="/admin/orders" className="text-decoration-none">
+          <Link to="/admin/categories" className="text-decoration-none">
             <div className="card bg-warning text-white shadow">
               <div className="card-body d-flex justify-content-between align-items-center">
                 <div>
-                  <h5>Total Revenue</h5>
-                  <h2>₹{totalRevenue}</h2>
+                  <h5>Total Categories</h5>
+                  <h2>{totalCategories}</h2>
                 </div>
+                <FaThLarge size={32} />
               </div>
             </div>
           </Link>
@@ -65,7 +85,7 @@ const Dashboard = () => {
               <div className="card-body d-flex justify-content-between align-items-center">
                 <div>
                   <h5>Total Active Users</h5>
-                  <h2>{totalUsers}</h2>
+                  <h2>{totalActiveUsers}</h2>
                 </div>
                 <FaUsers size={32} />
               </div>

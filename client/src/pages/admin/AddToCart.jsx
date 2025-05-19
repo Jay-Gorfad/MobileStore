@@ -1,8 +1,13 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 const AddToCart = () => {
+    const { userId } = useParams(); // ✅ Get userId from route
+    const [products, setProducts] = useState([]);
+    const [addingToCart, setAddingToCart] = useState(false);
+
     const [formData, setFormData] = useState({
         productId: "",
         quantity: "",
@@ -10,41 +15,36 @@ const AddToCart = () => {
 
     const [errors, setErrors] = useState({});
 
-    // Static grocery products
-    const products = [
-        { productId: 1, productName: "Apples" },
-        { productId: 2, productName: "Bananas" },
-        { productId: 3, productName: "Carrots" },
-        { productId: 4, productName: "Tomatoes" },
-        { productId: 5, productName: "Milk" },
-    ];
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            const res = await axios.get("http://localhost:8000/products"); // 🔁 Adjust endpoint if needed
+            setProducts(res.data);
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+            toast.error("Failed to load products.");
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
 
-        // Validate field
         const error = validateField(name, value);
-        setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
+        setErrors((prev) => ({ ...prev, [name]: error }));
     };
 
     const validateField = (name, value) => {
         let error = null;
-
-        if (name === "productId" && !value) {
-            error = "Please select a product.";
-        }
-
-        if (name === "quantity") {
-            if (!value || value <= 0) {
-                error = "Quantity must be at least 1.";
-            }
-        }
-
+        if (name === "productId" && !value) error = "Please select a product.";
+        if (name === "quantity" && (!value || value <= 0)) error = "Quantity must be at least 1.";
         return error;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const formErrors = {};
@@ -53,13 +53,26 @@ const AddToCart = () => {
             if (error) formErrors[field] = error;
         });
 
-        if (Object.values(formErrors).some((error) => error)) {
+        if (Object.values(formErrors).length > 0) {
             setErrors(formErrors);
             return;
         }
 
-        setErrors({});
-        toast.success("Product added to cart successfully!");
+        setAddingToCart(true);
+        try {
+            await axios.post("http://localhost:8000/cart", {
+                userId,
+                productId: formData.productId,
+                quantity: formData.quantity,
+            });
+            toast.success("Product added to cart successfully!");
+            setFormData({ productId: "", quantity: "" });
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to add product to cart.");
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
     return (
@@ -69,11 +82,11 @@ const AddToCart = () => {
                 <ol className="breadcrumb mb-4">
                     <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
                     <li className="breadcrumb-item"><Link to="/admin/users">Users</Link></li>
-                    <li className="breadcrumb-item"><Link to="/admin/cart">Cart</Link></li>
+                    <li className="breadcrumb-item"><Link to={`/admin/cart/${userId}`}>Cart</Link></li>
                     <li className="breadcrumb-item active" aria-current="page">Add Product to Cart</li>
                 </ol>
             </nav>
-            <h5>User: John Doe</h5>
+            <h5>User ID: {userId}</h5>
 
             <div className="card mb-4">
                 <div className="card-body">
@@ -89,10 +102,10 @@ const AddToCart = () => {
                                         value={formData.productId}
                                         onChange={handleChange}
                                     >
-                                        <option value="" disabled>Select a product</option>
-                                        {products.map((product) => (
-                                            <option key={product.productId} value={product.productId}>
-                                                {product.productId} - {product.productName}
+                                        <option value="">Select Product</option>
+                                        {products.map((prod) => (
+                                            <option key={prod._id} value={prod._id}>
+                                                {prod.productName}
                                             </option>
                                         ))}
                                     </select>
@@ -117,7 +130,9 @@ const AddToCart = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="btn btn-primary">Add to Cart</button>
+                        <button type="submit" className="btn btn-primary" disabled={addingToCart}>
+                            {addingToCart ? "Adding..." : "Add to Cart"}
+                        </button>
                     </form>
                 </div>
             </div>

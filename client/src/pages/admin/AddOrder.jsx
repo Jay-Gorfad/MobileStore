@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-
+import axios from "axios";
 const AddOrder = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         userId: "",
         orderDate: "",
@@ -21,7 +22,7 @@ const AddOrder = () => {
     const [errors, setErrors] = useState({
         userId: "",
         orderDate: "",
-        products: [], // Array to store errors for each product
+        products: [],
         firstName: "",
         lastName: "",
         address: "",
@@ -33,16 +34,36 @@ const AddOrder = () => {
         status: "",
     });
 
-    // Static data for users and products
-    const users = [
-        { id: "1", name: "User 1" },
-        { id: "2", name: "User 2" },
-    ];
-
-    const products = [
-        { id: "101", name: "Product 1" },
-        { id: "102", name: "Product 2" },
-    ];
+        // ✅ new state for users and products
+        const [users, setUsers] = useState([]);
+        const [products, setProducts] = useState([]);
+    
+        // ✅ fetch users and products on component mount
+        useEffect(() => {
+            fetchUsers();
+            fetchProducts();
+        }, []);
+    
+        const fetchUsers = async () => {
+            try {
+                const res = await axios.get('http://localhost:8000/users'); // 🔁 update API route as per your backend
+                console.log(res.data);
+                setUsers(res.data);
+            } catch (error) {
+                console.error("Failed to fetch users:", error);
+                toast.error("Failed to load users.");
+            }
+        };
+    
+        const fetchProducts = async () => {
+            try {
+                const res = await axios.get('http://localhost:8000/products'); // 🔁 update API route as per your backend
+                setProducts(res.data);
+            } catch (error) {
+                console.error("Failed to fetch products:", error);
+                toast.error("Failed to load products.");
+            }
+        };
 
     const handleProductChange = (index, e) => {
         const { name, value } = e.target;
@@ -50,12 +71,9 @@ const AddOrder = () => {
         newProducts[index][name] = value;
         setFormData({ ...formData, products: newProducts });
 
-        // Validate the changed field
         const errorMessage = validateField(name, value);
         const newErrors = { ...errors };
-        if (!newErrors.products[index]) {
-            newErrors.products[index] = {};
-        }
+        if (!newErrors.products[index]) newErrors.products[index] = {};
         newErrors.products[index][name] = errorMessage || undefined;
         setErrors(newErrors);
     };
@@ -67,22 +85,20 @@ const AddOrder = () => {
         });
         setErrors({
             ...errors,
-            products: [...errors.products, {}], // Add an empty error object for the new product
+            products: [...errors.products, {}],
         });
     };
 
     const removeProduct = (index) => {
         const newProducts = formData.products.filter((_, i) => i !== index);
-        
         setFormData({ ...formData, products: newProducts });
-    
         setErrors(prevErrors => {
             const newErrors = { ...prevErrors };
             newErrors.products = prevErrors.products.filter((_, i) => i !== index);
             return newErrors;
         });
     };
-    
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -97,39 +113,28 @@ const AddOrder = () => {
     const validateField = (name, value) => {
         if (!value || (typeof value === "string" && !value.trim())) {
             const fieldNames = {
-                userId: "User ID",
-                orderDate: "Order Date",
-                firstName: "First Name",
-                lastName: "Last Name",
-                address: "Address",
-                city: "City",
-                state: "State",
-                pinCode: "Pin Code",
-                phone: "Phone Number",
-                shippingCharge: "Shipping Charge",
-                status: "Order Status",
-                productId: "Product ID",
-                quantity: "Quantity",
+                userId: "User ID", orderDate: "Order Date", firstName: "First Name",
+                lastName: "Last Name", address: "Address", city: "City", state: "State",
+                pinCode: "Pin Code", phone: "Phone Number", shippingCharge: "Shipping Charge",
+                status: "Order Status", productId: "Product ID", quantity: "Quantity"
             };
             return `${fieldNames[name] || "This field"} is required.`;
         }
-    
         if (name === "quantity" && (isNaN(value) || value <= 0)) {
             return "Quantity must be greater than 0.";
         }
-    
-        return undefined; // Instead of empty string
+        return undefined;
     };
-    
+
     const validateForm = () => {
-        const newErrors = { userId: "", orderDate: "", products: [], firstName: "", lastName: "", address: "", city: "", state: "", pinCode: "", phone: "", shippingCharge: "", status: "" };
+        const newErrors = {
+            userId: "", orderDate: "", products: [], firstName: "", lastName: "",
+            address: "", city: "", state: "", pinCode: "", phone: "", shippingCharge: "", status: ""
+        };
 
-
-        // Validate user and order details
         if (!formData.userId) newErrors.userId = "Please select a user.";
         if (!formData.orderDate) newErrors.orderDate = "Please enter an order date.";
 
-        // Validate each product
         formData.products.forEach((product, index) => {
             newErrors.products[index] = {};
             if (!product.productId) {
@@ -140,7 +145,6 @@ const AddOrder = () => {
             }
         });
 
-        // Validate shipping details
         const requiredFields = ["firstName", "lastName", "address", "city", "state", "pinCode", "phone", "shippingCharge"];
         requiredFields.forEach((field) => {
             if (!formData[field]) {
@@ -149,23 +153,66 @@ const AddOrder = () => {
         });
 
         setErrors(newErrors);
-        
 
-        // Check if there are any errors
-        const hasErrors = 
-        Object.entries(newErrors)
-            .some(([key, value]) => key !== "products" && value) || 
-        newErrors.products.some(productErrors => Object.values(productErrors).some(error => error));
-    
+        const hasErrors = Object.entries(newErrors)
+            .some(([key, value]) => key !== "products" && value) ||
+            newErrors.products.some(productErrors => Object.values(productErrors).some(error => error));
+
         return !hasErrors;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+    
+        // Step 1: Validate the form
         if (validateForm()) {
-            toast.success("Order added successfully");
+            try {
+                // Step 2: Add the Address first
+                const addressData = {
+                    fullName: formData.firstName+" "+formData.lastName,
+                    userId: formData.userId,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    pincode: formData.pinCode,
+                    phone: formData.phone
+                };
+                console.log(addressData);
+                // Send a POST request to create the address in the backend
+                const addressResponse = await axios.post('http://localhost:8000/addresses', addressData);
+                if (addressResponse.data._id) {
+                    // Step 3: Get the address ID from the response
+                    const addressId = addressResponse.data._id;
+    
+                    // Step 4: Prepare the order data with the addressId
+                    const orderData = {
+                        userId: formData.userId,
+                        orderDate: formData.orderDate,
+                        orderStatus:formData.status,
+                        products: formData.products,
+                        shippingCharge: formData.shippingCharge,
+                        delAddressId: addressId
+                    };
+                    console.log(orderData);
+                    // Step 5: Add the order using the addressId
+                    const orderResponse = await axios.post('http://localhost:8000/orders', orderData);
+    
+                    if (orderResponse.status === 201) {
+                        toast.success("Order added successfully!");
+                        navigate("/admin/orders");
+                    } else {
+                        toast.error("Failed to add order.");
+                    }
+                } else {
+                    toast.error("Failed to create address.");
+                }
+            } catch (error) {
+                console.error("Error submitting order:", error);
+                toast.error("An error occurred while submitting the order.");
+            }
         }
     };
+    
 
     return (
         <div>
@@ -179,144 +226,123 @@ const AddOrder = () => {
                     </ol>
                 </div>
             </div>
-            <div>
-                <form onSubmit={handleSubmit}>
-                    {/* User ID and Order Date */}
-                    <div className="mb-3">
-                        <label htmlFor="userId" className="form-label">User ID</label>
-                        <select className="form-select" id="userId" name="userId" value={formData.userId} onChange={handleChange}>
-                            <option value="">Select User</option>
-                            {users.map(user => (
-                                <option key={user.id} value={user.id}>{user.name}</option>
-                            ))}
-                        </select>
-                        {errors.userId && <div className="error-message">{errors.userId}</div>}
-                    </div>
+            <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                    <label className="form-label">User</label>
+                    <select className="form-select" name="userId" value={formData.userId} onChange={handleChange}>
+                        <option value="">Select User</option>
+                        {users.map(user => <option key={user._id} value={user._id}>{user.firstName}</option>)}
+                        
+                    </select>
+                    {errors.userId && <div className="error-message">{errors.userId}</div>}
+                </div>
 
-                    <div className="mb-3">
-                        <label htmlFor="orderDate" className="form-label">Order Date</label>
-                        <input type="date" className="form-control" id="orderDate" name="orderDate" value={formData.orderDate} onChange={handleChange} />
-                        {errors.orderDate && <div className="error-message">{errors.orderDate}</div>}
-                    </div>
+                <div className="mb-3">
+                    <label className="form-label">Order Date</label>
+                    <input type="date" className="form-control" name="orderDate" value={formData.orderDate} onChange={handleChange} />
+                    {errors.orderDate && <div className="error-message">{errors.orderDate}</div>}
+                </div>
 
-                    {/* Products Section */}
-                    <div id="productContainer">
-                        {formData.products.map((product, index) => (
-                            <div className="product-entry mb-3" key={index}>
-                                <h5>Product {index + 1}</h5>
-                                <div className="row align-items-end">
-                                    <div className="col-md-5">
-                                        <label htmlFor={`productId${index}`} className="form-label">Product ID</label>
-                                        <select
-                                            className={`form-select`}
-                                            id={`productId${index}`}
-                                            name="productId"
-                                            value={product.productId}
-                                            onChange={(e) => handleProductChange(index, e)}
-                                        >
-                                            <option value="">Select Product</option>
-                                            {products.map(prod => (
-                                                <option key={prod.id} value={prod.id}>{prod.name}</option>
-                                            ))}
-                                        </select>
-                                        {errors.products[index]?.productId && (
-                                            <div className="error-message">{errors.products[index].productId}</div>
-                                        )}
-                                    </div>
-
-                                    <div className="col-md-5">
-                                        <label htmlFor={`quantity${index}`} className="form-label">Quantity</label>
-                                        <input
-                                            type="number"
-                                            className={`form-control`}
-                                            id={`quantity${index}`}
-                                            name="quantity"
-                                            min="1"
-                                            value={product.quantity}
-                                            onChange={(e) => handleProductChange(index, e)}
-                                        />
-                                        {errors.products[index]?.quantity && (
-                                            <div className="error-message">{errors.products[index].quantity}</div>
-                                        )}
-                                    </div>
-
-                                    <div className="col-md-2">
-                                        <button type="button" className="btn btn-danger mt-2 deleteProductBtn" onClick={() => removeProduct(index)}>Delete Product</button>
-                                    </div>
+                <div id="productContainer">
+                    {formData.products.map((product, index) => (
+                        <div className="product-entry mb-3" key={index}>
+                            <h5>Product {index + 1}</h5>
+                            <div className="row align-items-end">
+                                <div className="col-md-5">
+                                    <label className="form-label">Product</label>
+                                    <select
+                                        className="form-select"
+                                        name="productId"
+                                        value={product.productId}
+                                        onChange={(e) => handleProductChange(index, e)}
+                                    >
+                                        <option value="">Select Product</option>
+                                        {products.map(prod => (
+                                            <option key={prod._id} value={prod._id}>{prod.productName}</option>
+                                        ))}
+                                    </select>
+                                    {errors.products[index]?.productId && <div className="error-message">{errors.products[index].productId}</div>}
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <button type="button" className="btn btn-secondary" onClick={addProduct}>Add Another Product</button>
-
-                    {/* Shipping Details Section */}
-                    <div id="shippingDetailsSection" className="mb-4">
-                        <h2 className="mt-3">Shipping Details</h2>
-                        <div className="row g-5">
-                        <div className="col-md-12">
-                                <div className="row gx-2 gy-3">
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingFirstName" className="form-label d-block">First Name<span className="required">*</span></label>
-                                        <input type="text" id="shippingFirstName" name="firstName" className="form-control" placeholder="First Name" value={formData.firstName} onChange={handleChange} />
-                                        {errors.firstName && <p className="error-message">{errors.firstName}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingLastName" className="form-label d-block">Last Name<span className="required">*</span></label>
-                                        <input type="text" id="shippingLastName" name="lastName" className="form-control" placeholder="Last Name" value={formData.lastName} onChange={handleChange} />
-                                        {errors.lastName && <p className="error-message">{errors.lastName}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-12">
-                                        <label htmlFor="shippingAddress" className="form-label d-block">Street Address<span className="required">*</span></label>
-                                        <textarea id="shippingAddress" name="address" className="form-control" rows="2" placeholder="Street Address" value={formData.address} onChange={handleChange}></textarea>
-                                        {errors.address && <p className="error-message">{errors.address}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingCity" className="form-label d-block">City<span className="required">*</span></label>
-                                        <input type="text" id="shippingCity" name="city" className="form-control" placeholder="City" value={formData.city} onChange={handleChange} />
-                                        {errors.city && <p className="error-message">{errors.city}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingState" className="form-label d-block">State<span className="required">*</span></label>
-                                        <input type="text" id="shippingState" name="state" className="form-control" placeholder="State" value={formData.state} onChange={handleChange} />
-                                        {errors.state && <p className="error-message">{errors.state}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingPinCode" className="form-label d-block">Pin Code<span className="required">*</span></label>
-                                        <input type="text" id="shippingPinCode" name="pinCode" className="form-control" placeholder="Pin Code" value={formData.pinCode} onChange={handleChange} />
-                                        {errors.pinCode && <p className="error-message">{errors.pinCode}</p>}
-                                    </div>
-                                    <div className="col-12 col-sm-6">
-                                        <label htmlFor="shippingPhone" className="form-label d-block">Phone<span className="required">*</span></label>
-                                        <input type="text" id="shippingPhone" name="phone" className="form-control" placeholder="Phone Number" value={formData.phone} onChange={handleChange} />
-                                        {errors.phone && <p className="error-message">{errors.phone}</p>}
-                                    </div>
+                                <div className="col-md-5">
+                                    <label className="form-label">Quantity</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        name="quantity"
+                                        min="1"
+                                        value={product.quantity}
+                                        onChange={(e) => handleProductChange(index, e)}
+                                    />
+                                    {errors.products[index]?.quantity && <div className="error-message">{errors.products[index].quantity}</div>}
+                                </div>
+                                <div className="col-md-2">
+                                    <button type="button" className="btn btn-danger mt-2" onClick={() => removeProduct(index)}>Delete</button>
                                 </div>
                             </div>
                         </div>
+                    ))}
+                </div>
+
+                <button type="button" className="btn btn-secondary mb-3" onClick={addProduct}>Add Another Product</button>
+
+                <h4>Shipping Details</h4>
+                <div className="row">
+                    <div className="col-md-6 mb-3">
+                        <label className="form-label">First Name</label>
+                        <input type="text" name="firstName" className="form-control" value={formData.firstName} onChange={handleChange} />
+                        {errors.firstName && <div className="error-message">{errors.firstName}</div>}
                     </div>
-                    <div className="mb-3 mt-4">
-                        <label htmlFor="shippingCharge" className="form-label">Shipping Charge</label>
-                        <input type="number" step="0.01" id="shippingCharge" name="shippingCharge" className="form-control" placeholder="Enter shipping charge" value={formData.shippingCharge} onChange={handleChange} />
+                    <div className="col-md-6 mb-3">
+                        <label className="form-label">Last Name</label>
+                        <input type="text" name="lastName" className="form-control" value={formData.lastName} onChange={handleChange} />
+                        {errors.lastName && <div className="error-message">{errors.lastName}</div>}
+                    </div>
+                    <div className="col-12 mb-3">
+                        <label className="form-label">Address</label>
+                        <textarea name="address" className="form-control" rows="2" value={formData.address} onChange={handleChange}></textarea>
+                        {errors.address && <div className="error-message">{errors.address}</div>}
+                    </div>
+                    <div className="col-md-4 mb-3">
+                        <label className="form-label">City</label>
+                        <input type="text" name="city" className="form-control" value={formData.city} onChange={handleChange} />
+                        {errors.city && <div className="error-message">{errors.city}</div>}
+                    </div>
+                    <div className="col-md-4 mb-3">
+                        <label className="form-label">State</label>
+                        <input type="text" name="state" className="form-control" value={formData.state} onChange={handleChange} />
+                        {errors.state && <div className="error-message">{errors.state}</div>}
+                    </div>
+                    <div className="col-md-4 mb-3">
+                        <label className="form-label">Pin Code</label>
+                        <input type="text" name="pinCode" className="form-control" value={formData.pinCode} onChange={handleChange} />
+                        {errors.pinCode && <div className="error-message">{errors.pinCode}</div>}
+                    </div>
+                    <div className="col-md-6 mb-3">
+                        <label className="form-label">Phone</label>
+                        <input type="text" name="phone" className="form-control" value={formData.phone} onChange={handleChange} />
+                        {errors.phone && <div className="error-message">{errors.phone}</div>}
+                    </div>
+                    <div className="col-md-6 mb-3">
+                        <label className="form-label">Shipping Charge</label>
+                        <input type="number" name="shippingCharge" className="form-control" value={formData.shippingCharge} onChange={handleChange} />
                         {errors.shippingCharge && <div className="error-message">{errors.shippingCharge}</div>}
                     </div>
+                </div>
 
-                    <div className="mb-3 mt-4">
-                        <label htmlFor="orderStatus" className="form-label">Order Status</label>
-                        <select className="form-select" id="orderStatus" name="status" value={formData.status} onChange={handleChange}>
-                            <option value="Pending">Pending</option>
-                            <option value="Processing">Processing</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Cancelled">Cancelled</option>
-                        </select>
-                        {errors.status && <div className="error-message">{errors.status}</div>}
-                    </div>
+                <div className="mb-3">
+                    <label className="form-label">Order Status</label>
+                    <select name="status" className="form-select" value={formData.status} onChange={handleChange}>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    {errors.status && <div className="error-message">{errors.status}</div>}
+                </div>
 
-                    {/* Submit Button */}
-                    <button type="submit" className="btn btn-primary" name="add-order">Add Order</button>
-                </form>
-            </div>
+                <button type="submit" className="btn btn-primary">Submit Order</button>
+            </form>
         </div>
     );
 };

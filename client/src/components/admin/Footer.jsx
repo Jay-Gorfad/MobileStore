@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="py-4 bg-light mt-auto">
       <div className="container-fluid px-4">
         <div className="d-flex align-items-center justify-content-between small">
-          <div className="text-muted">Copyright &copy; MobiTrendz 2025</div>
+          <div className="text-muted">Copyright &copy; PureBite 2025</div>
         </div>
       </div>
       <ToastContainer />

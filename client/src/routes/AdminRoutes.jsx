@@ -42,16 +42,16 @@ const AdminRoutes = () => {
 
         <Route path="banners" element={<Banners />} />
         <Route path="add-banner" element={<AddBanner />} />
-        <Route path="update-banner" element={<UpdateBanner />} />
+        <Route path="update-banner/:id" element={<UpdateBanner />} />
         
         <Route path="users" element={<Users />} />
         <Route path="add-user" element={<AddUser />} />
-        <Route path="update-user" element={<UpdateUser />} />
-        <Route path="user-details" element={<UserDetails />} />
+        <Route path="update-user/:id" element={<UpdateUser />} />
+        <Route path="user-details/:id" element={<UserDetails />} />
 
-        <Route path="cart" element={<Cart />} />
-        <Route path="add-to-cart" element={<AddToCart />} />
-        <Route path="update-cart/:id" element={<UpdateCart />} />
+        <Route path="cart/:userId" element={<Cart />} />
+        <Route path="add-to-cart/:userId" element={<AddToCart />} />
+        <Route path=":userId/update-cart/:productId" element={<UpdateCart />} />
 
         <Route path="reviews" element={<Reviews />} />
         <Route path="add-review" element={<AddReview />} />
@@ -60,7 +60,7 @@ const AdminRoutes = () => {
         <Route path="products" element={<Products />} />
         <Route path="add-product" element={<AddProduct />} />
         <Route path="update-product/:id" element={<UpdateProduct />} />
-        <Route path="view-product" element={<ViewProduct />} />
+        <Route path="view-product/:id" element={<ViewProduct />} />
 
         <Route path="categories" element={<Categories />} />
         <Route path="add-category" element={<AddCategory />} />
@@ -79,8 +79,8 @@ const AdminRoutes = () => {
 
         <Route path="orders" element={<Orders />} />
         <Route path="add-order" element={<AddOrder />} />
-        <Route path="update-order/:id" element={<UpdateOrder />} />
-        <Route path="view-order" element={<ViewOrder />} />
+        <Route path="update-order/:orderId" element={<UpdateOrder />} />
+        <Route path="view-order/:orderId" element={<ViewOrder />} />
 
       </Route>
     </Routes>

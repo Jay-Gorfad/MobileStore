@@ -85,6 +85,10 @@ const Reviews = () => {
   };
 
   const columns = [
+     {
+      name: "Product ID",
+      selector: (row) => row.productId._id,
+    },
         {
           name: "Product",
           selector: (row) => row.productId?.productName,
@@ -96,9 +100,7 @@ const Reviews = () => {
                 alt={row.productId?.productName}
                 style={{ width: 50, height: 50, objectFit: "cover", marginRight: 10 }}
               />
-              <Link to={`/admin/view-product/${row.productId?._id}`}>
                 {row.productId?.productName}
-              </Link>
             </div>
           ),
         },
@@ -108,9 +110,9 @@ const Reviews = () => {
             `${row.userId?.firstName || ""} ${row.userId?.lastName || ""}`,
           sortable: true,
           cell: (row) => (
-            <Link to={`/admin/user-details/${row.userId?._id}`}>
+            <div>
               {row.userId?.firstName} {row.userId?.lastName}
-            </Link>
+              </div>
           ),
         },      
     {

@@ -1,3 +1,4 @@
+
 export const loadAdminAssets = () => {
     const publicPath = window.location.origin; // Automatically detects the correct base URL
   
@@ -23,7 +24,6 @@ export const loadAdminAssets = () => {
   
     // Load CSS files
     loadCSS(`${publicPath}/admin/css/styles.css`);
-    loadCSS(`${publicPath}/admin/css/bootstrap.min.css`);
     loadCSS(`${publicPath}/admin/css/form-validation.css`);
   
     // Load JS files

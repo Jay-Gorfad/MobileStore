@@ -1,103 +1,136 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import Swal from "sweetalert2";
-
-const orders = [
-  {
-    orderId: 1,
-    customerName: "Jay Barasiya",
-    orderDate: "2025-03-12",
-    totalQuantity: 3,
-    totalPrice: 150000.5,
-    orderStatus: "Pending",
-  },
-  {
-    orderId: 2,
-    customerName: "Prince Bhatt",
-    orderDate: "2025-03-11",
-    totalQuantity: 2,
-    totalPrice: 120000.0,
-    orderStatus: "Shipped",
-  },
-  {
-    orderId: 3,
-    customerName: "Jay Gorfad",
-    orderDate: "2025-03-11",
-    totalQuantity: 4,
-    totalPrice: 120000.0,
-    orderStatus: "Shipped",
-  },
-];
+import DataTable from "react-data-table-component";
 
 const OrderTable = () => {
+  const [orders, setOrders] = useState([]);
+  const [filterText, setFilterText] = useState("");
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/orders/active");
+      setOrders(response.data.orders);
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const handleDelete = (orderId) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.patch(`http://localhost:8000/orders/${orderId}/delete`);
+          Swal.fire("Deleted!", "Order has been deleted.", "success");
+          fetchOrders();
+        } catch (error) {
+          Swal.fire("Error", "Failed to delete order.", "error");
+        }
+      }
+    });
+  };
+
+  const columns = [
+    {
+      name: "Order ID",
+      selector: row => row._id,
+      sortable: true,
+    },
+    {
+      name: "Customer Name",
+      selector: row => row.userId?.firstName + " " + row.userId?.lastName,
+      cell: row => (
+          <div>{row.userId?.firstName + " " + row.userId?.lastName}</div>
+      ),
+      sortable: true,
+    },
+    
+    {
+      name: "Order Date",
+      selector: row => new Date(row.orderDate).toLocaleDateString(),
+      sortable: true,
+    },
+    {
+      name: "Shipping (₹)",
+      selector: row => parseFloat(row.shippingCharge?.["$numberDecimal"] || 0).toFixed(2),
+    },
+    {
+      name: "Total Price (₹)",
+      selector: row => parseFloat(row.total?.["$numberDecimal"] || 0).toFixed(2),
+    },
+    {
+      name: "Status",
+      selector: row => row.orderStatus,
+    },
+    {
+      name: "Actions",
+      cell: row => (
+        <div className="d-flex flex-nowrap">
+          <Link className="btn btn-info btn-sm me-1" to={`/admin/view-order/${row._id}`}>View</Link>
+          <Link className="btn btn-primary btn-sm me-1" to={`/admin/update-order/${row._id}`}>Edit</Link>
+          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row._id)}>Delete</button>
+        </div>
+      ),
+      width: "210px"
+    },
+  ];
+
+  const filteredItems = orders.filter((item) =>
+    Object.values({
+      _id: item._id,
+      firstName: item.userId?.firstName,
+      lastName: item.userId?.lastName,
+      orderDate: new Date(item.orderDate).toLocaleDateString(),
+      shippingCharge: item.shippingCharge?.$numberDecimal,
+      total: item.total?.$numberDecimal,
+      orderStatus: item.orderStatus,
+    })
+      .join(" ")
+      .toLowerCase()
+      .includes(filterText.toLowerCase())
+  );
+
+  
+
   return (
-    <div className="card-body">
-      <table className="table border text-nowrap">
-        <thead className="table-light">
-          <tr>
-            <th>Order ID</th>
-            <th>Customer Name</th>
-            <th>Order Date</th>
-            <th>Quantity</th>
-            <th>Total Price</th>
-            <th>Order Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.length > 0 ? (
-            orders.map((order) => (
-              <tr key={order.orderId}>
-                <td>{order.orderId}</td>
-                <td>
-                <Link to={`/admin/user-details`} style={{ color: "blue", textDecoration: "none" }}>{order.customerName}</Link>
-                </td>
-                <td>{order.orderDate}</td>
-                <td>{order.totalQuantity}</td>
-                <td>₹{order.totalPrice.toFixed(2)}</td>
-                <td>{order.orderStatus}</td>
-                <td>
-                  <div className="d-flex flex-nowrap">
-                    <Link to={`/admin/view-order`} className="btn btn-info btn-sm me-1">
-                      View
-                    </Link>
-                    <Link to={`/admin/update-order`} className="btn btn-primary btn-sm me-1">
-                      Edit
-                    </Link>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete()}>
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="7" className="text-center">
-                No orders found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+    <div>
+      
+
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search orders..."
+          value={filterText}
+          onChange={(e) => setFilterText(e.target.value)}
+        />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={filteredItems}
+        pagination
+        highlightOnHover
+        striped
+        responsive
+        persistTableHead
+        noDataComponent="No orders found."
+      />
     </div>
   );
-};
-
-const handleDelete = () => { 
-  Swal.fire({
-			title: "Are you sure?",
-			text: "You won't be able to revert this!",
-			icon: "warning",
-			showCancelButton: true,
-			confirmButtonColor: "#d33",
-			cancelButtonColor: "#3085d6",
-			confirmButtonText: "Yes, delete it!",
-		}).then((result) => {
-			if (result.isConfirmed) {
-				Swal.fire("Deleted!", "Order has been deleted.", "success");
-			}
-		});
 };
 
 export default OrderTable;

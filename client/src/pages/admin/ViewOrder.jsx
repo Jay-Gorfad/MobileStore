@@ -1,65 +1,61 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import axios from "axios";
 
 const ViewOrder = () => {
-    const orderData = {
-        orderId: "12345",
-        orderDate: "2025-03-13",
-        orderStatus: "Shipped",
-        paymentMode: "Credit Card",
-        shippingCharge: 50,
-        total: 1050,
-        user: {
-            firstName: "John",
-            lastName: "Doe",
-            email: "john.doe@example.com",
-            mobileNo: "9876543210",
-        },
-        address: {
-            fullName: "John Doe",
-            street: "123 Main Street",
-            city: "New York",
-            state: "NY",
-            pincode: "10001",
-            phone: "9876543210",
-        },
-        items: [
-            {
-                productId: "1",
-                productName: "Apple",
-                price: 200,
-                quantity: 2,
-                image: "/img/items/products/66ee9001ceeaeapple.webp",
-            },
-            {
-                productId: "2",
-                productName: "Carrots",
-                price: 150,
-                quantity: 3,
-                image: "/img/items/products/carrots.webp",
-            },
-        ],
-    };
+    const { orderId } = useParams();
+    const [order, setOrder] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchOrder = async () => {
+            try {
+                const res = await axios.get(`http://localhost:8000/orders/${orderId}`);
+                const { order, orderItems } = res.data;
+                setOrder(order);
+                setProducts(orderItems || []);
+                console.log("Order fetched successfully:", order);
+            } catch (error) {
+                console.error("Failed to fetch order:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchOrder();
+
+    }, [orderId]);
+
+    if (loading) return <div>Loading...</div>;
+    if (!order) return <div>Order not found.</div>;
+
+    // Safely parse decimal values
+    const shippingCharge = parseFloat(order.shippingCharge?.$numberDecimal || 0);
+    const total = parseFloat(order.total?.$numberDecimal || 0);
+    let subtotal = total - shippingCharge;
+    let actualTotal = 0;
 
     return (
         <div>
-            <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+            <div className="d-flex justify-content-between align-items-center mt-4 mb-4">
                 <div>
                     <h1>View Order</h1>
-                    <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><Link to={"/admin"}>Dashboard</Link></li>
-                        <li class="breadcrumb-item"><Link to={"/admin/orders"}>Orders</Link></li>
-                        <li class="breadcrumb-item active">View Order</li>
+                    <ol className="breadcrumb mb-0">
+                        <li className="breadcrumb-item"><Link to="/admin">Dashboard</Link></li>
+                        <li className="breadcrumb-item"><Link to="/admin/orders">Orders</Link></li>
+                        <li className="breadcrumb-item active">View Order</li>
                     </ol>
                 </div>
             </div>
+
             <div className="card mb-4">
                 <div className="card-header"><h5>Order Details</h5></div>
                 <div className="card-body">
-                    <p><strong>Order ID:</strong> {orderData.orderId}</p>
-                    <p><strong>Status:</strong> {orderData.orderStatus}</p>
-                    <p><strong>Order Date:</strong> {orderData.orderDate}</p>
-                    <p><strong>Payment mode:</strong> {orderData.paymentMode}</p>
+                    <p><strong>Order ID:</strong> {order._id}</p>
+                    <p><strong>Status:</strong> {order.orderStatus}</p>
+                    <p><strong>Order Date:</strong> {new Date(order.orderDate).toLocaleDateString()}</p>
+                    <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
+                    <p><strong>Payment Status:</strong> {order.paymentStatus}</p>
                 </div>
             </div>
 
@@ -68,12 +64,12 @@ const ViewOrder = () => {
                     <div className="card mb-4">
                         <div className="card-header"><h5>Shipping Address</h5></div>
                         <div className="card-body">
-                            <p><strong>Name:</strong> {orderData.address.fullName}</p>
-                            <p><strong>Street:</strong> {orderData.address.street}</p>
-                            <p><strong>City:</strong> {orderData.address.city}</p>
-                            <p><strong>State:</strong> {orderData.address.state}</p>
-                            <p><strong>Zip Code:</strong> {orderData.address.pincode}</p>
-                            <p><strong>Phone:</strong> {orderData.address.phone}</p>
+                            <p><strong>Name:</strong> {order.delAddressId.fullName}</p>
+                            <p><strong>Address:</strong> {order.delAddressId.address}</p>
+                            <p><strong>City:</strong> {order.delAddressId.city}</p>
+                            <p><strong>State:</strong> {order.delAddressId.state}</p>
+                            <p><strong>Zip Code:</strong> {order.delAddressId.pincode}</p>
+                            <p><strong>Phone:</strong> {order.delAddressId.phone}</p>
                         </div>
                     </div>
                 </div>
@@ -81,15 +77,13 @@ const ViewOrder = () => {
                     <div className="card mb-4">
                         <div className="card-header"><h5>User Information</h5></div>
                         <div className="card-body">
-                            <p><strong>Name:</strong> {orderData.user.firstName} {orderData.user.lastName}</p>
-                            <p><strong>Email:</strong> {orderData.user.email}</p>
-                            <p><strong>Phone:</strong> {orderData.user.mobileNo}</p>
+                            <p><strong>Name:</strong> {order.userId.firstName} {order.userId.lastName}</p>
+                            <p><strong>Email:</strong> {order.userId.email}</p>
+                            <p><strong>Phone:</strong> {order.userId.mobile}</p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            
 
             <div className="card mb-4">
                 <div className="card-header"><h5>Ordered Items</h5></div>
@@ -105,28 +99,45 @@ const ViewOrder = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {orderData.items.map((item) => (
-                                <tr key={item.productId}>
-                                    <td><img src={item.image} alt="Item" width="50" /></td>
-                                    <td>{item.productName}</td>
-                                    <td>₹{item.price}</td>
-                                    <td>{item.quantity}</td>
-                                    <td>₹{item.price * item.quantity}</td>
-                                </tr>
-                            ))}
+                            {products.map((item) => {
+                                const price = parseFloat(item.price?.$numberDecimal || 0);
+                                const totalItem = price * item.quantity;
+                                actualTotal += totalItem;
+                                return (
+                                    <tr key={item.productId._id}>
+                                        <td>
+                                            <img
+                                                src={item.productId.productImage}
+                                                alt={item.productId.productName}
+                                                width="50"
+                                            />
+                                        </td>
+                                        <td>{item.productId.productName}</td>
+                                        <td>₹{price.toFixed(2)}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>₹{totalItem.toFixed(2)}</td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                         <tfoot>
                             <tr>
                                 <th colSpan="4" className="text-end">Subtotal:</th>
-                                <td>₹{orderData.total - orderData.shippingCharge}</td>
+                                <td>₹{(actualTotal).toFixed(2)}</td>
                             </tr>
+                            {actualTotal+shippingCharge-total  > 0 && (
+                                <tr className="discount-summary text-danger">
+                                    <th colSpan="4" className="text-end">Total Discount:</th>
+                                    <td>-₹{(actualTotal+shippingCharge-total).toFixed(2)}</td>
+                                </tr>
+                            )}
                             <tr>
                                 <th colSpan="4" className="text-end">Shipping Charge:</th>
-                                <td>₹{orderData.shippingCharge}</td>
+                                <td>₹{shippingCharge.toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <th colSpan="4" className="text-end">Total:</th>
-                                <td>₹{orderData.total}</td>
+                                <td>₹{total.toFixed(2)}</td>
                             </tr>
                         </tfoot>
                     </table>

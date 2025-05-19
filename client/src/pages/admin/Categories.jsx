@@ -70,14 +70,14 @@ const Categories = () => {
 
   const columns = [
     {
-        name: "No.", // Column name changed to "Serial Number"
-        selector: (row, index) => index + 1, // Use the index to show serial number (1-based)
+        name: "Category ID", // Column name changed to "Serial Number"
+        selector: (row) => row._id,
         sortable: true,
-        width: "10%", // Adjust width
+        width: "20%", // Adjust width
         grow: 0,
       },
     {
-      name: "Category Image",
+      name: "Image",
       selector: row => row.image,
       sortable: true,
       cell: (row) => (
@@ -87,7 +87,7 @@ const Categories = () => {
           style={{ width: "75px", height: "75px", objectFit: "cover" }} 
         />
       ),
-      width: "25%", // Percentage width
+      width: "20%", // Percentage width
       grow: 0, 
     },
     {
@@ -126,7 +126,7 @@ const Categories = () => {
             to={`/admin/update-category/${row._id}`} 
             aria-label={`Edit category ${row.name}`}
           >
-            <i className="fas fa-edit"></i> Edit
+            Edit
           </Link>
           <button 
             className="btn btn-danger btn-sm" 
@@ -136,11 +136,11 @@ const Categories = () => {
           >
             {deletingCategoryId === row._id ? (
               <>
-                <i className="fas fa-spinner fa-spin"></i> Deleting...
+                Deleting...
               </>
             ) : (
               <>
-                <i className="fas fa-trash"></i> Delete
+                Delete
               </>
             )}
           </button>
@@ -195,19 +195,7 @@ const Categories = () => {
           responsive
           search
           progressPending={loading}
-          customStyles={{
-            headCells: {
-              style: {
-                fontSize: '16px', // Set font size for header cells
-                fontWeight: 'bold',
-              },
-            },
-            cells: {
-              style: {
-                fontSize: '14px', // Set font size for data cells
-              },
-            },
-          }}
+
         />
       </div>
     </div>
