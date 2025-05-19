@@ -144,7 +144,7 @@ const Checkout = () => {
       </div>
 
       {/* stepper */}
-      <div className="container mb-5">
+      {/* <div className="container mb-5">
         <ul className="d-flex justify-content-between list-unstyled stepper-blue">
           {["Cart", "Address", "Payment", "Done"].map((s, i) => (
             <li key={s} className={`step ${i <= 1 ? "active" : ""}`}>
@@ -153,7 +153,7 @@ const Checkout = () => {
             </li>
           ))}
         </ul>
-      </div>
+      </div> */}
 
       <div className="container">
 

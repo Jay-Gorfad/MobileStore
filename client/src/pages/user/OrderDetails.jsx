@@ -160,9 +160,9 @@ const OrderDetails = () => {
           <div className="card border-0 shadow-sm mb-4">
             <div className="card-body">
               <h5 className="card-title mb-3">Customer Details</h5>
-              <p className="mb-1"><strong>{customer.firstName} {customer.lastName}</strong></p>
-              <p className="mb-1"><i className="bi bi-telephone me-2" />+91 {customer.mobile}</p>
-              <p className="mb-0"><i className="bi bi-envelope  me-2" />{customer.email}</p>
+              <p className="mb-1"><strong>{customer?.firstName} {customer?.lastName}</strong></p>
+              <p className="mb-1"><i className="bi bi-telephone me-2" />+91 {customer?.mobile}</p>
+              <p className="mb-0"><i className="bi bi-envelope  me-2" />{customer?.email}</p>
             </div>
           </div>
 

@@ -113,10 +113,12 @@ const ProductList = ({ products }) => {
                       alt={product.productName}
                     />
                   </Link>
+
+                  {/* Wishlist Heart Icon */}
                   <span
                     className="position-absolute top-0 end-0 m-2 p-2 rounded-circle"
                     style={{
-                      backgroundColor: isInWishlist ? "#c0392b" : "#3498db",
+                      backgroundColor: isInWishlist ? "#c0392b" : "#0d6efd",
                       color: "#fff",
                       cursor: "pointer",
                     }}
@@ -124,17 +126,23 @@ const ProductList = ({ products }) => {
                   >
                     <i className={`fa${isInWishlist ? "s" : "r"} fa-heart`}></i>
                   </span>
+
+                  {/* Discount Badge */}
                   {product.discount > 0 && !isOutOfStock && (
                     <span className="badge bg-success position-absolute top-0 start-0 m-2">
                       -{product.discount}%
                     </span>
                   )}
+
+                  {/* Out of Stock Badge */}
                   {isOutOfStock && (
                     <span className="badge bg-danger position-absolute top-0 start-0 m-2">
                       Out of Stock
                     </span>
                   )}
                 </div>
+
+                {/* Card Body */}
                 <div className="card-body d-flex flex-column">
                   <Link to="/shop" className="text-muted small text-decoration-none mb-1">
                     {product.categoryId?.name || "Category"}
@@ -142,6 +150,8 @@ const ProductList = ({ products }) => {
                   <Link to={`/product/${product._id}`} className="text-dark fw-semibold mb-1 text-decoration-none">
                     <h6 className="mb-1">{product.productName}</h6>
                   </Link>
+
+                  {/* Star Rating */}
                   <div className="mb-2 d-flex align-items-center">
                     {[...Array(5)].map((_, i) => (
                       <span
@@ -152,21 +162,18 @@ const ProductList = ({ products }) => {
                     ))}
                     <span className="small ps-2 text-muted">({product.totalReviews || 0})</span>
                   </div>
+
+                  {/* Price and Add to Cart */}
                   <div className="mt-auto d-flex justify-content-between align-items-center">
-
-                    <div className="mt-auto d-block justify-content-between align-items-center">
-                        <div className="fw-bold text-primary">₹{discountedPrice}</div>
-                        <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => handleAddToCartClick(product._id)}
-                        disabled={isOutOfStock || addingToCartId === product._id}
-                        >
-                        
-                        {addingToCartId === product._id ? "Adding..." : "Add to Cart"}
-                        </button>
-                    </div>
+                    <div className="fw-bold text-primary">₹{discountedPrice}</div>
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => handleAddToCartClick(product._id)}
+                      disabled={isOutOfStock || addingToCartId === product._id}
+                    >
+                      {addingToCartId === product._id ? "Adding..." : "Add to Cart"}
+                    </button>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -174,6 +181,7 @@ const ProductList = ({ products }) => {
         })
       )}
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <nav className="mt-4 d-flex justify-content-center">
           <ul className="pagination">

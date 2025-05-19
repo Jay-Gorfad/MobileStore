@@ -70,7 +70,7 @@ const BillingAddressForm = ({ userId ,fetchAddresses}) => {
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
-            toast.error("Please correct the highlighted fields.");
+            toast.error("Please fill all the details.");
             return;
         }
 

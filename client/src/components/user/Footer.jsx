@@ -50,7 +50,7 @@ const Footer = (props) => {
 
                     <div className="col-12 col-md-5">
                         <h5 className="fw-bold mb-4">Newsletter</h5>
-                        <p className="text-muted mb-4">Monthly digest of what's new and exciting from us.</p>
+                        <p className="text-muted mb-4">Monthly what's new and exciting from us.</p>
                         <form className="mb-4">
                             <div className="input-group">
                                 <input 

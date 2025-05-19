@@ -77,7 +77,6 @@ const OrdersTable = () => {
             <tr>
               <th className="text-start px-3">Order ID</th>
               <th>Order Date</th>
-              <th>Items</th>
               <th>Total (₹)</th>
               <th>Status</th>
               <th>Actions</th>
@@ -92,7 +91,6 @@ const OrdersTable = () => {
                 <tr key={o._id}>
                   <td className="text-start px-3">{o._id}</td>
                   <td>{new Date(o.orderDate).toLocaleDateString()}</td>
-                  <td>{qty}</td>
                   <td>₹{total}</td>
                   <td>{o.orderStatus}</td>
                   <td>
