@@ -1,113 +1,84 @@
-// src/components/user/OrdersTable.jsx
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const OrdersTable = () => {
+  const [userId, setUserId] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [filter, setFilter] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  /* ------------------------------------------------------------------ */
-  /*  Fetch active orders once on mount                                 */
-  /* ------------------------------------------------------------------ */
+  // Get userId from localStorage
   useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser?._id) {
+      setUserId(storedUser._id);
+    } else {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Fetch orders once userId is set
+  useEffect(() => {
+    if (!userId) return;
+
     const fetchOrders = async () => {
       try {
-        const { data } = await axios.get("http://localhost:8000/orders/active");
-        // the API you showed earlier returns   { orders: [...] }
-        setOrders(data.orders || []);
+        const res = await axios.get(`http://localhost:8000/orders/user/${userId}`);
+        setOrders(res.data.orders || []);
       } catch (err) {
-        console.error("Failed to fetch orders:", err);
+        console.error('Failed to fetch orders:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
+  }, [userId]);
 
-  /* ------------------------------------------------------------------ */
-  /*  Simple client‑side search                                         */
-  /* ------------------------------------------------------------------ */
-  const filtered = orders.filter((o) =>
-    [
-      o._id,
-      o.userId?.firstName,
-      o.userId?.lastName,
-      o.orderStatus,
-      new Date(o.orderDate).toLocaleDateString(),
-      o.total?.$numberDecimal,
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(filter.toLowerCase())
-  );
+  if (loading) {
+    return <p className="text-center py-4">Loading your orders...</p>;
+  }
 
-  /* ------------------------------------------------------------------ */
-  /*  Render                                                            */
-  /* ------------------------------------------------------------------ */
+  if (orders.length === 0) {
+    return <p className="text-center py-4">You have no orders yet.</p>;
+  }
+
   return (
-    <div className="table-responsive">
-      {/* search box */}
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search orders…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-      </div>
+    <div className="table-responsive mt-4">
+      <table className="table cart-table text-nowrap text-center">
+        <thead className="table-light">
+          <tr>
+            <th className="text-start">Order ID</th>
+            <th>Order Date</th>
+            <th>Status</th>
+            <th>Shipping</th>
+            <th>Total</th>
+            <th>View</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => {
+            const shipping = parseFloat(order.shippingCharge?.["$numberDecimal"] || 0).toFixed(2);
+            const total = parseFloat(order.total?.["$numberDecimal"] || 0).toFixed(2);
 
-      {/* loading spinner */}
-      {loading && (
-        <div className="text-center my-4">
-          <div className="spinner-border" role="status" />
-        </div>
-      )}
-
-      {!loading && filtered.length === 0 && (
-        <p className="text-center text-muted">No orders found.</p>
-      )}
-
-      {!loading && filtered.length > 0 && (
-        <table className="table table-bordered text-center align-middle">
-          <thead style={{ backgroundColor: "#007bff", color: "#fff" }}>
-            <tr>
-              <th className="text-start px-3">Order ID</th>
-              <th>Order Date</th>
-              <th>Total (₹)</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filtered.map((o) => {
-              const total = parseFloat(o.total?.$numberDecimal || 0).toFixed(2);
-              const qty   = o.items?.length ?? o.quantity ?? 0;
-              return (
-                <tr key={o._id}>
-                  <td className="text-start px-3">{o._id}</td>
-                  <td>{new Date(o.orderDate).toLocaleDateString()}</td>
-                  <td>₹{total}</td>
-                  <td>{o.orderStatus}</td>
-                  <td>
-                    <Link
-                      to={`/order/${o._id}`}
-                      className="btn btn-sm text-white"
-                      style={{ backgroundColor: "#007bff" }}
-                    >
-                      View Order
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+            return (
+              <tr key={order._id}>
+                <td className="text-start">{order._id}</td>
+                <td>{new Date(order.orderDate).toLocaleDateString()}</td>
+                <td>{order.orderStatus}</td>
+                <td>₹{shipping}</td>
+                <td>₹{total}</td>
+                <td>
+                  <Link className="btn btn-sm btn-primary" to={`/order/${order._id}`}>
+                    View
+                  </Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

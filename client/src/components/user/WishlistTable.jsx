@@ -134,7 +134,7 @@ const WishlistTable = ({ userId }) => {
               </div>
 
               <div className="text-muted small mb-3">
-                ₹{item.salePrice.toLocaleString()}
+                ₹{(item.salePrice - (item.salePrice * item.discount / 100)).toFixed(2)}
               </div>
 
               {/* add‑to‑cart btn */}
